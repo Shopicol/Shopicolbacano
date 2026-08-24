@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="/admin/admin.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -19,7 +19,7 @@
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="login-brand">
-      <img src="../logo.png" alt="Shopicol" class="logo-img">
+      <img src="/logo.png" alt="Shopicol" class="logo-img">
       <em class="logo-bacano">Bacano</em>
     </div>
     <p class="login-eyebrow">✦ Panel de administración ✦</p>
@@ -54,14 +54,14 @@
   <header class="admin-header">
     <div class="admin-header-inner">
       <div class="admin-brand">
-        <img src="../logo.png" alt="Shopicol" class="logo-img admin-logo-img">
+        <img src="/logo.png" alt="Shopicol" class="logo-img admin-logo-img">
         <em class="logo-bacano">Bacano</em>
         <span class="admin-tag">Admin</span>
       </div>
 
       <div class="admin-header-right">
         <span class="admin-user" id="adminUserEmail"></span>
-        <a href="../index.html" class="btn-ghost" target="_blank">Ver sitio ↗</a>
+        <a href="/index.html" class="btn-ghost" target="_blank">Ver sitio ↗</a>
         <button class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
       </div>
     </div>
@@ -431,13 +431,29 @@
 
       <div class="form-row">
         <label>
-          <span>Imagen del producto</span>
+          <span>Imagen principal</span>
           <div class="image-field">
             <img id="imagePreview" alt="" hidden>
             <input type="file" id="fieldImageFile" accept="image/*">
             <input type="text" id="fieldImageUrl" placeholder="o pega la URL de una imagen">
           </div>
           <small id="imageUploadStatus"></small>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Galería (fotos adicionales)</span>
+          <div id="galleryList" class="gallery-list"><!-- filas por JS --></div>
+          <button type="button" class="btn-ghost btn-sm" id="addGalleryPhotoBtn" style="margin-top:8px;">+ Agregar foto</button>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Tonos disponibles (opcional, separados por coma)</span>
+          <input type="text" id="fieldTones" placeholder="Ej: Nude, Rosa, Coral">
+          <small>El cliente va a poder elegir uno de estos tonos antes de agregar al carrito. Déjalo vacío si el producto no tiene variantes de tono.</small>
         </label>
       </div>
 
@@ -473,7 +489,7 @@
 <!-- ============ RECIBO IMPRIMIBLE (oculto, solo visible al imprimir/descargar) ============ -->
 <div id="receiptPrintArea" class="receipt-print-area">
   <div class="receipt-header">
-    <img src="../logo.png" alt="" class="receipt-logo" id="receiptLogo">
+    <img src="/logo.png" alt="" class="receipt-logo" id="receiptLogo">
     <div class="receipt-header-text">
       <h1 id="receiptStoreName">Shopicol Bacano</h1>
       <p>Recibo de pedido</p>
@@ -586,9 +602,9 @@
 <!-- ============ TOASTS ============ -->
 <div class="toast" id="toast" hidden></div>
 
-<script src="../products.js"></script>
-<script src="../config.js"></script>
-<script src="../supabase-client.js"></script>
-<script src="admin.js"></script>
+<script src="/products.js"></script>
+<script src="/config.js"></script>
+<script src="/supabase-client.js"></script>
+<script src="/admin/admin.js"></script>
 </body>
 </html>
