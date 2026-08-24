@@ -86,6 +86,11 @@
     modalQtyPlus: document.getElementById("modalQtyPlus"),
     modalQty: document.getElementById("modalQty"),
     modalAddCart: document.getElementById("modalAddCart"),
+    modalGalleryPrev: document.getElementById("modalGalleryPrev"),
+    modalGalleryNext: document.getElementById("modalGalleryNext"),
+    modalThumbs: document.getElementById("modalThumbs"),
+    modalTones: document.getElementById("modalTones"),
+    toneChips: document.getElementById("toneChips"),
 
     // carrito
     cartBtn: document.getElementById("cartBtn"),
@@ -252,7 +257,7 @@
     const stamp = !p.avail
       ? `<span class="stamp-agotado">Agotado</span>`
       : "";
-    const quickAdd = p.avail
+    const quickAdd = (p.avail && !(p.tones || "").trim())
       ? `<button class="card-quickadd" data-quickadd="${p.id}" aria-label="Agregar ${p.name} al carrito" title="Agregar al carrito">+</button>`
       : "";
 
@@ -340,9 +345,43 @@
      --------------------------------------------------------------- */
   let currentModalProduct = null;
   let modalQtyValue = 1;
+  let currentGalleryImages = [];
+  let currentGalleryIndex = 0;
+  let currentTones = [];
+  let selectedTone = null;
+
+  function renderModalGalleryImage() {
+    el.modalImg.src = currentGalleryImages[currentGalleryIndex] || "";
+    el.modalThumbs.querySelectorAll("img").forEach((img, i) => {
+      img.classList.toggle("active", i === currentGalleryIndex);
+    });
+  }
+  function goToModalImage(i) {
+    if (!currentGalleryImages.length) return;
+    currentGalleryIndex = (i + currentGalleryImages.length) % currentGalleryImages.length;
+    renderModalGalleryImage();
+  }
+  el.modalGalleryPrev.addEventListener("click", () => goToModalImage(currentGalleryIndex - 1));
+  el.modalGalleryNext.addEventListener("click", () => goToModalImage(currentGalleryIndex + 1));
+  el.modalThumbs.addEventListener("click", (e) => {
+    const idx = e.target.closest("[data-thumb-index]")?.dataset.thumbIndex;
+    if (idx != null) goToModalImage(Number(idx));
+  });
+
+  function renderToneChips() {
+    el.toneChips.innerHTML = currentTones.map(t => `
+      <button type="button" class="tone-chip ${t === selectedTone ? "active" : ""}" data-tone="${t}">${t}</button>
+    `).join("");
+  }
+  el.toneChips.addEventListener("click", (e) => {
+    const tone = e.target.closest("[data-tone]")?.dataset.tone;
+    if (tone) {
+      selectedTone = tone;
+      renderToneChips();
+    }
+  });
 
   function showModal(p) {
-    el.modalImg.src = p.image;
     el.modalImg.alt = p.name;
     el.modalStamp.hidden = p.avail;
     el.modalBrand.textContent = p.brand;
@@ -357,6 +396,37 @@
       el.modalOffer.textContent = `🔥 Precio especial ahora: ${money(p.offer)}`;
     } else {
       el.modalOffer.hidden = true;
+    }
+
+    // Galería: imagen principal + fotos adicionales (si las hay)
+    const gallery = [p.image, ...(Array.isArray(p.gallery_images) ? p.gallery_images : [])].filter(Boolean);
+    currentGalleryImages = gallery.length ? gallery : [p.image];
+    currentGalleryIndex = 0;
+    renderModalGalleryImage();
+
+    if (currentGalleryImages.length > 1) {
+      el.modalGalleryPrev.hidden = false;
+      el.modalGalleryNext.hidden = false;
+      el.modalThumbs.hidden = false;
+      el.modalThumbs.innerHTML = currentGalleryImages.map((src, i) => `
+        <img src="${src}" alt="" data-thumb-index="${i}" class="${i === 0 ? "active" : ""}">
+      `).join("");
+    } else {
+      el.modalGalleryPrev.hidden = true;
+      el.modalGalleryNext.hidden = true;
+      el.modalThumbs.hidden = true;
+      el.modalThumbs.innerHTML = "";
+    }
+
+    // Tonos: se muestran solo si el producto tiene alguno definido
+    currentTones = (p.tones || "").split(",").map(s => s.trim()).filter(Boolean);
+    selectedTone = currentTones.length ? currentTones[0] : null;
+    if (currentTones.length) {
+      el.modalTones.hidden = false;
+      renderToneChips();
+    } else {
+      el.modalTones.hidden = true;
+      el.toneChips.innerHTML = "";
     }
 
     currentModalProduct = p;
@@ -392,7 +462,7 @@
   });
   el.modalAddCart.addEventListener("click", () => {
     if (!currentModalProduct || !currentModalProduct.avail) return;
-    addToCart(currentModalProduct.id, modalQtyValue);
+    addToCart(currentModalProduct.id, modalQtyValue, selectedTone);
     el.modalAddCart.textContent = "¡Agregado! ✓";
     el.modalAddCart.classList.add("added");
     setTimeout(() => {
@@ -506,6 +576,18 @@
   const MAYOR_THRESHOLD = 50;
   let cart = loadCart();
 
+  // Las claves del carrito son el id del producto solo, o "id::Tono" cuando
+  // el cliente eligió un tono específico — así cada tono queda como línea
+  // independiente en el carrito.
+  function cartKey(id, tone) {
+    return tone ? `${id}::${tone}` : String(id);
+  }
+  function parseCartKey(key) {
+    const idx = key.indexOf("::");
+    if (idx === -1) return { id: key, tone: null };
+    return { id: key.slice(0, idx), tone: key.slice(idx + 2) };
+  }
+
   function loadCart() {
     try {
       return JSON.parse(localStorage.getItem(CART_KEY)) || {};
@@ -519,9 +601,9 @@
   function cartCount() {
     return Object.values(cart).reduce((a, b) => a + b, 0);
   }
-  function addToCart(id, qty) {
-    id = String(id);
-    cart[id] = (cart[id] || 0) + qty;
+  function addToCart(id, qty, tone) {
+    const key = cartKey(id, tone);
+    cart[key] = (cart[key] || 0) + qty;
     saveCart();
     renderCartBadge();
   }
@@ -543,7 +625,8 @@
   // Subtotal de referencia SIEMPRE a precio Detal — es el monto que
   // determina si el pedido desbloquea el precio Mayor.
   function cartDetalSubtotal() {
-    return Object.entries(cart).reduce((sum, [id, qty]) => {
+    return Object.entries(cart).reduce((sum, [key, qty]) => {
+      const { id } = parseCartKey(key);
       const p = PRODUCTS.find(pp => String(pp.id) === String(id));
       if (!p) return sum;
       const price = p.offer || p.detal || 0;
@@ -556,12 +639,14 @@
   function cartLineItems() {
     const mayorUnlocked = isMayorUnlocked();
     return Object.entries(cart)
-      .map(([id, qty]) => {
+      .map(([key, qty]) => {
+        const { id, tone } = parseCartKey(key);
         const p = PRODUCTS.find(pp => String(pp.id) === String(id));
         if (!p) return null;
         const tierPrice = mayorUnlocked ? (p.mayor || 0) : (p.detal || 0);
         const price = p.offer || tierPrice;
-        return { id: p.id, name: p.name, image: p.image, qty, price };
+        const displayName = tone ? `${p.name} (${tone})` : p.name;
+        return { key, id: p.id, name: displayName, image: p.image, qty, price, tone };
       })
       .filter(Boolean);
   }
@@ -608,11 +693,11 @@
           <p class="cart-line-price">${money(item.price)} c/u</p>
           <div class="cart-line-actions">
             <div class="qty-stepper">
-              <button type="button" data-cart-minus="${item.id}" aria-label="Restar">−</button>
+              <button type="button" data-cart-minus="${item.key}" aria-label="Restar">−</button>
               <span>${item.qty}</span>
-              <button type="button" data-cart-plus="${item.id}" aria-label="Sumar">+</button>
+              <button type="button" data-cart-plus="${item.key}" aria-label="Sumar">+</button>
             </div>
-            <button class="cart-remove" data-cart-remove="${item.id}">Quitar</button>
+            <button class="cart-remove" data-cart-remove="${item.key}">Quitar</button>
           </div>
         </div>
       </div>
@@ -707,7 +792,7 @@
       delivery_method: el.custDelivery.value,
       address: el.custAddress.value.trim(),
       note: el.custNote.value.trim(),
-      items: items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+      items: items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, tone: i.tone || null })),
       total: cartTotal(),
       price_mode: unlockedMayor ? "mayor" : "detal",
       status: "nuevo",
@@ -724,6 +809,9 @@
         console.warn("No se pudo guardar el pedido en Supabase:", err);
       }
     }
+
+    // Envía una notificación por correo (si EmailJS está configurado)
+    sendOrderEmailNotification(order, items);
 
     // Arma el mensaje de WhatsApp con el detalle del pedido
     const lines = [];
@@ -760,6 +848,41 @@
     el.submitOrderBtn.disabled = false;
     el.submitOrderBtn.textContent = "Enviar pedido por WhatsApp";
   });
+
+  /* ---------------------------------------------------------------
+     9.65 Notificación por correo cuando entra un pedido (EmailJS)
+     --------------------------------------------------------------- */
+  function sendOrderEmailNotification(order, items) {
+    const cfg = typeof EMAILJS_CONFIG !== "undefined" ? EMAILJS_CONFIG : null;
+    const ready = cfg && cfg.publicKey && !cfg.publicKey.includes("PEGA_AQUI") &&
+      cfg.serviceId && !cfg.serviceId.includes("PEGA_AQUI") &&
+      cfg.templateId && !cfg.templateId.includes("PEGA_AQUI") &&
+      typeof emailjs !== "undefined";
+
+    if (!ready) {
+      console.warn("EmailJS no está configurado en config.js — no se envió notificación por correo.");
+      return;
+    }
+
+    const itemsText = items.map(i => `${i.qty}x ${i.name} — ${money(i.price)} c/u`).join("\n");
+
+    emailjs.send(cfg.serviceId, cfg.templateId, {
+      to_email: cfg.notifyEmail,
+      customer_name: order.customer_name,
+      phone: order.phone,
+      city: order.city,
+      payment_method: order.payment_method,
+      delivery_method: order.delivery_method,
+      address: order.address || "—",
+      note: order.note || "—",
+      items_text: itemsText,
+      total: money(order.total),
+      price_mode: order.price_mode === "mayor" ? "Mayor" : "Detal",
+    }, cfg.publicKey).then(
+      () => console.log("Notificación de pedido enviada por correo."),
+      (err) => console.warn("No se pudo enviar la notificación por correo:", err)
+    );
+  }
 
   /* ---------------------------------------------------------------
      9.7 Banners promocionales (carrusel superior)

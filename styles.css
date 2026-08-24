@@ -663,6 +663,26 @@ button, select, input{ font-family:inherit; }
   min-height:260px;
 }
 .modal-img-wrap img{ width:100%; height:100%; object-fit:cover; }
+.modal-gallery-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:32px; height:32px; border-radius:50%; border:none;
+  background:rgba(255,255,255,.85); color:var(--ink); font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.modal-gallery-nav[hidden]{ display:none; }
+.modal-gallery-nav.prev{ left:10px; }
+.modal-gallery-nav.next{ right:10px; }
+.modal-thumbs{
+  grid-column:1; display:flex; gap:8px; padding:10px; background:var(--cream-deep);
+  overflow-x:auto;
+}
+.modal-thumbs[hidden]{ display:none; }
+.modal-thumbs img{
+  width:44px; height:44px; object-fit:cover; border-radius:8px; cursor:pointer;
+  border:2px solid transparent; flex-shrink:0; opacity:.7; transition:opacity .15s, border-color .15s;
+}
+.modal-thumbs img:hover{ opacity:1; }
+.modal-thumbs img.active{ opacity:1; border-color:var(--pink); }
 .modal-stamp{
   position:absolute; top:16px; left:16px;
   background:#c0294a; color:#fff;
@@ -700,6 +720,19 @@ button, select, input{ font-family:inherit; }
   border:1px solid var(--line); border-radius:999px;
   padding:5px 12px;
 }
+
+/* ---- selector de tonos ---- */
+.modal-tones{ margin-top:16px; }
+.modal-tones[hidden]{ display:none; }
+.modal-tones-label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:8px; }
+.tone-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.tone-chip{
+  border:1.5px solid var(--line); background:var(--paper); color:var(--ink);
+  padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer;
+  transition:all .15s;
+}
+.tone-chip:hover{ border-color:var(--pink); color:var(--pink-dark); }
+.tone-chip.active{ background:var(--ink); border-color:var(--ink); color:var(--cream); }
 
 /* ---- fila de agregar al carrito dentro del modal de producto ---- */
 .modal-cart-row{ display:flex; gap:12px; margin-top:18px; align-items:center; }

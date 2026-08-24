@@ -20,6 +20,10 @@
 <!-- Supabase (opcional): si config.js tiene claves reales, el catálogo se
      lee en vivo desde la nube; si no, se usa el catálogo local automáticamente. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- EmailJS (opcional): envía una notificación por correo cuando llega
+     un pedido nuevo. Si no está configurado en config.js, simplemente no se envía. -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -160,7 +164,10 @@
     <div class="modal-img-wrap">
       <img id="modalImg" src="" alt="">
       <span class="modal-stamp" id="modalStamp" hidden>Agotado</span>
+      <button class="modal-gallery-nav prev" id="modalGalleryPrev" aria-label="Foto anterior" hidden>‹</button>
+      <button class="modal-gallery-nav next" id="modalGalleryNext" aria-label="Foto siguiente" hidden>›</button>
     </div>
+    <div class="modal-thumbs" id="modalThumbs" hidden><!-- filled by JS --></div>
     <div class="modal-body">
       <p class="modal-brand" id="modalBrand"></p>
       <h3 id="modalTitle"></h3>
@@ -177,6 +184,11 @@
       </div>
       <p class="modal-offer" id="modalOffer" hidden></p>
       <p class="modal-category" id="modalCategory"></p>
+
+      <div class="modal-tones" id="modalTones" hidden>
+        <span class="modal-tones-label">Elige un tono:</span>
+        <div class="tone-chips" id="toneChips"><!-- filled by JS --></div>
+      </div>
 
       <div class="modal-cart-row">
         <div class="qty-stepper">
