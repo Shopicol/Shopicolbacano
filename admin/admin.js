@@ -69,6 +69,9 @@
     categoryOptions: document.getElementById("categoryOptions"),
     fieldFeatured: document.getElementById("fieldFeatured"),
     adminFeaturedFilter: document.getElementById("adminFeaturedFilter"),
+    galleryList: document.getElementById("galleryList"),
+    addGalleryPhotoBtn: document.getElementById("addGalleryPhotoBtn"),
+    fieldTones: document.getElementById("fieldTones"),
 
     toast: document.getElementById("toast"),
 
@@ -148,6 +151,79 @@
 
   let allProducts = [];
   let pendingImageFile = null;
+  let galleryRows = [];
+  let galleryRowSeq = 0;
+
+  /* ---------------------------------------------------------------
+     Galería de fotos adicionales por producto
+     --------------------------------------------------------------- */
+  function renderGalleryList() {
+    el.galleryList.innerHTML = galleryRows.map(row => {
+      const previewSrc = row.file ? URL.createObjectURL(row.file) : (row.url ? resolveImagePath(row.url) : "");
+      return `
+        <div class="gallery-row-empty" data-gallery-row="${row.id}">
+          <button type="button" class="gallery-remove" data-gallery-remove="${row.id}" title="Quitar">✕</button>
+          ${previewSrc ? `<img src="${previewSrc}" alt="" style="width:100%;height:34px;object-fit:cover;border-radius:6px;">` : ""}
+          <input type="file" accept="image/*" data-gallery-file="${row.id}">
+          <input type="text" placeholder="o URL" value="${row.file ? "" : (row.url || "")}" data-gallery-url="${row.id}">
+        </div>
+      `;
+    }).join("");
+  }
+
+  function addGalleryRow(url = "") {
+    galleryRows.push({ id: galleryRowSeq++, url, file: null });
+    renderGalleryList();
+  }
+  function removeGalleryRow(id) {
+    galleryRows = galleryRows.filter(r => r.id !== id);
+    renderGalleryList();
+  }
+
+  el.addGalleryPhotoBtn.addEventListener("click", () => addGalleryRow());
+
+  el.galleryList.addEventListener("click", (e) => {
+    const removeId = e.target.closest("[data-gallery-remove]")?.dataset.galleryRemove;
+    if (removeId) removeGalleryRow(Number(removeId));
+  });
+
+  el.galleryList.addEventListener("change", (e) => {
+    const fileId = e.target.closest("[data-gallery-file]")?.dataset.galleryFile;
+    const urlId = e.target.closest("[data-gallery-url]")?.dataset.galleryUrl;
+    if (fileId != null) {
+      const row = galleryRows.find(r => r.id === Number(fileId));
+      if (row && e.target.files[0]) {
+        row.file = e.target.files[0];
+        row.url = "";
+        renderGalleryList();
+      }
+    }
+    if (urlId != null) {
+      const row = galleryRows.find(r => r.id === Number(urlId));
+      if (row) {
+        row.url = e.target.value.trim();
+        row.file = null;
+        renderGalleryList();
+      }
+    }
+  });
+
+  async function buildGalleryImagesArray() {
+    const urls = [];
+    for (const row of galleryRows) {
+      if (row.file) {
+        const ext = row.file.name.split(".").pop();
+        const path = `producto-galeria-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
+        const { error } = await supabaseClient.storage.from("product-images").upload(path, row.file, { upsert: false });
+        if (error) throw new Error("No se pudo subir una foto de la galería: " + error.message);
+        const { data } = supabaseClient.storage.from("product-images").getPublicUrl(path);
+        urls.push(data.publicUrl);
+      } else if (row.url) {
+        urls.push(row.url);
+      }
+    }
+    return urls;
+  }
 
   /* ---------------------------------------------------------------
      Utilidades
@@ -158,12 +234,13 @@
   }
 
   // Las rutas de imagen del catálogo semilla son relativas a la RAÍZ del
-  // sitio (ej. "images/p3_tl.jpg"), pero este panel vive en /admin, así
-  // que hay que anteponer "../" a las que no sean ya una URL completa.
+  // sitio (ej. "images/p3_tl.jpg"). Siempre devolvemos una ruta absoluta
+  // (empezando con "/") para que funcione sin importar cómo esté escrita
+  // la URL del panel (con o sin barra final).
   function resolveImagePath(path) {
     if (!path) return "";
-    if (/^https?:\/\//i.test(path) || path.startsWith("../") || path.startsWith("/")) return path;
-    return "../" + path;
+    if (/^https?:\/\//i.test(path) || path.startsWith("/")) return path;
+    return "/" + path;
   }
 
   function showToast(msg, isError) {
@@ -794,6 +871,13 @@
       el.fieldOffer.value = product.offer ?? "";
       el.fieldNote.value = product.note || "";
       el.fieldFeatured.checked = Boolean(product.featured);
+      el.fieldTones.value = product.tones || "";
+      galleryRows = [];
+      galleryRowSeq = 0;
+      (Array.isArray(product.gallery_images) ? product.gallery_images : []).forEach(url => {
+        galleryRows.push({ id: galleryRowSeq++, url, file: null });
+      });
+      renderGalleryList();
       el.fieldImageUrl.value = product.image || "";
       if (product.image) {
         el.imagePreview.src = resolveImagePath(product.image);
@@ -813,6 +897,10 @@
       el.fieldAvail.value = "true";
       el.imagePreview.hidden = true;
       el.deleteProductBtn.hidden = true;
+      galleryRows = [];
+      galleryRowSeq = 0;
+      renderGalleryList();
+      el.fieldTones.value = "";
     }
 
     el.productModalOverlay.hidden = false;
@@ -882,6 +970,7 @@
 
     try {
       const imageUrl = await uploadImageIfNeeded();
+      const galleryImages = await buildGalleryImagesArray();
 
       const payload = {
         name: el.fieldName.value.trim(),
@@ -893,6 +982,8 @@
         mayor: parseFloat(el.fieldMayor.value) || 0,
         offer: el.fieldOffer.value ? parseFloat(el.fieldOffer.value) : null,
         image: imageUrl || "",
+        gallery_images: galleryImages,
+        tones: el.fieldTones.value.trim(),
         note: el.fieldNote.value.trim(),
         featured: el.fieldFeatured.checked,
       };
@@ -972,7 +1063,7 @@
       el.settingsLogoPreview.src = settings.logo_url;
       el.settingsLogoPreview.hidden = false;
     } else {
-      el.settingsLogoPreview.src = "../logo.png";
+      el.settingsLogoPreview.src = "/logo.png";
       el.settingsLogoPreview.hidden = false;
     }
   }
