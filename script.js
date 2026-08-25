@@ -64,9 +64,6 @@
     resetFilters: document.getElementById("resetFilters"),
     modeToggle: document.getElementById("modeToggle"),
     modeWord: document.getElementById("modeWord"),
-    statTotal: document.getElementById("statTotal"),
-    statBrands: document.getElementById("statBrands"),
-    statStock: document.getElementById("statStock"),
     marqueeTrack: document.getElementById("marqueeTrack"),
     footerBrandsList: document.getElementById("footerBrandsList"),
     footerBottom: document.getElementById("footerBottom"),
@@ -81,7 +78,6 @@
     eyebrowText: document.getElementById("eyebrowText"),
     heroTitle: document.getElementById("heroTitle"),
     heroSubtitle: document.getElementById("heroSubtitle"),
-    heroNoteText: document.getElementById("heroNoteText"),
     contactSection: document.getElementById("contactSection"),
     contactTitle: document.getElementById("contactTitle"),
     contactSubtitle: document.getElementById("contactSubtitle"),
@@ -151,6 +147,8 @@
     bannerPrev: document.getElementById("bannerPrev"),
     bannerNext: document.getElementById("bannerNext"),
     bannerDots: document.getElementById("bannerDots"),
+    recentSection: document.getElementById("recentSection"),
+    recentScroll: document.getElementById("recentScroll"),
     featuredSection: document.getElementById("featuredSection"),
     featuredScroll: document.getElementById("featuredScroll"),
   };
@@ -600,29 +598,9 @@
   });
 
   /* ---------------------------------------------------------------
-     9. Stats del hero
+  /* ---------------------------------------------------------------
+     9. (sección de estadísticas del hero — removida a pedido)
      --------------------------------------------------------------- */
-  function paintStats() {
-    const total = PRODUCTS.length;
-    const brands = new Set(PRODUCTS.map(p => p.brand)).size;
-    const inStock = PRODUCTS.filter(p => isEffectivelyAvailable(p)).length;
-
-    animateCount(el.statTotal, total);
-    animateCount(el.statBrands, brands);
-    animateCount(el.statStock, inStock);
-  }
-
-  function animateCount(node, target) {
-    const duration = 900;
-    const start = performance.now();
-    function frame(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      node.textContent = Math.round(eased * target);
-      if (progress < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
 
   /* ---------------------------------------------------------------
      9.5 Carrito de compras (persistido en localStorage del navegador)
@@ -1001,6 +979,25 @@
   el.bannerNext.addEventListener("click", () => { goToBanner(bannerIndex + 1); startBannerAutoplay(); });
 
   /* ---------------------------------------------------------------
+     9.75 Recién llegado (4 productos más recientes: nuevos o editados)
+     --------------------------------------------------------------- */
+  function renderRecentSection() {
+    const recent = PRODUCTS
+      .filter(p => isEffectivelyAvailable(p) && (p.updated_at || p.created_at))
+      .slice()
+      .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+      .slice(0, 4);
+
+    if (!recent.length) {
+      el.recentSection.hidden = true;
+      return;
+    }
+    el.recentSection.hidden = false;
+    el.recentScroll.innerHTML = recent.map((p, i) => cardTemplate(p, i)).join("");
+    attachCardListeners(el.recentScroll);
+  }
+
+  /* ---------------------------------------------------------------
      9.8 Destacados y en oferta (carrusel horizontal)
      --------------------------------------------------------------- */
   function renderFeatured() {
@@ -1049,6 +1046,29 @@
     if (settings.accent_color) {
       document.documentElement.style.setProperty("--gold", settings.accent_color);
     }
+    if (settings.bg_color) {
+      document.documentElement.style.setProperty("--cream", settings.bg_color);
+    }
+    if (settings.text_color) {
+      document.documentElement.style.setProperty("--ink", settings.text_color);
+    }
+
+    // ---- Bordes de las tarjetas ----
+    if (settings.card_radius !== null && settings.card_radius !== undefined && settings.card_radius !== "") {
+      document.documentElement.style.setProperty("--radius-card", settings.card_radius + "px");
+    }
+
+    // ---- Tipografía (par de fuentes) ----
+    const fontPair = FONT_PAIRS[settings.font_pair] || FONT_PAIRS.clasica;
+    if (fontPair.googleFontsUrl && !document.querySelector(`link[data-font-pair="${settings.font_pair}"]`)) {
+      const fontLink = document.createElement("link");
+      fontLink.rel = "stylesheet";
+      fontLink.href = fontPair.googleFontsUrl;
+      fontLink.dataset.fontPair = settings.font_pair;
+      document.head.appendChild(fontLink);
+    }
+    document.documentElement.style.setProperty("--font-display", fontPair.display);
+    document.documentElement.style.setProperty("--font-body", fontPair.body);
 
     // ---- Meta descripción (SEO) ----
     if (el.metaDescription) el.metaDescription.setAttribute("content", settings.meta_description || "");
@@ -1078,12 +1098,8 @@
       el.heroSubtitle.textContent = settings.hero_subtitle || "";
     }
 
-    // ---- Cuadro "¿Cómo comprar?" ----
-    if (settings.hero_note_text === DEFAULT_SETTINGS.hero_note_text) {
-      el.heroNoteText.innerHTML = '<strong>¿Cómo comprar?</strong> El precio <em>Detal</em> es por unidad, sin monto mínimo. El precio <em>Mayor</em> se activa al acumular <strong>$50 o más</strong> en tu pedido — no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 🩷';
-    } else {
-      el.heroNoteText.textContent = settings.hero_note_text || "";
-    }
+    // (El cuadro "¿Cómo comprar?" se quitó de la portada a pedido del cliente;
+    // el ajuste "hero_note_text" queda guardado pero ya no se muestra aquí.)
 
     // ---- Descripción bajo el logo en el pie de página ----
     el.footerDescription.textContent = settings.footer_description || "";
@@ -1143,8 +1159,8 @@
 
     buildBrandOptions();
     buildCategoryPills();
-    paintStats();
     renderCartBadge();
+    renderRecentSection();
     renderFeatured();
     render();
     loadBanners();

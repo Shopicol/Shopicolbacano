@@ -69,10 +69,51 @@ const DEFAULT_SETTINGS = {
   logo_url: "",
   primary_color: "#D6336C",
   accent_color: "#E8A33D",
+  bg_color: "#FBF6EC",
+  text_color: "#2B1B17",
+  font_pair: "clasica",
+  card_radius: 18,
   contact_email: "",
   instagram_url: "",
   tiktok_url: "",
   facebook_url: "",
+};
+
+/* Combinaciones de tipografía disponibles para elegir en Ajustes.
+   "clasica" ya está precargada en el <head> del sitio; las demás se
+   cargan bajo demanda (solo si el negocio las elige), para no pesar
+   el sitio con fuentes que nadie está usando. */
+const FONT_PAIRS = {
+  clasica: {
+    label: "Clásica elegante (Fraunces + Plus Jakarta Sans)",
+    display: '"Fraunces", serif',
+    body: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
+    googleFontsUrl: null,
+  },
+  moderna: {
+    label: "Moderna minimalista (Poppins + Inter)",
+    display: '"Poppins", sans-serif',
+    body: '"Inter", system-ui, -apple-system, sans-serif',
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap",
+  },
+  divertida: {
+    label: "Divertida y redondeada (Baloo 2 + Nunito)",
+    display: '"Baloo 2", cursive',
+    body: '"Nunito", system-ui, sans-serif',
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap",
+  },
+  editorial: {
+    label: "Editorial refinada (Playfair Display + Lora)",
+    display: '"Playfair Display", serif',
+    body: '"Lora", serif',
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Lora:wght@400;500;600&display=swap",
+  },
+  calida: {
+    label: "Cálida artesanal (DM Serif Display + DM Sans)",
+    display: '"DM Serif Display", serif',
+    body: '"DM Sans", system-ui, sans-serif',
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap",
+  },
 };
 
 async function fetchSettings() {
