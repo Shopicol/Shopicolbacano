@@ -149,6 +149,12 @@
     settingsPrimaryColorHex: document.getElementById("settingsPrimaryColorHex"),
     settingsAccentColor: document.getElementById("settingsAccentColor"),
     settingsAccentColorHex: document.getElementById("settingsAccentColorHex"),
+    settingsBgColor: document.getElementById("settingsBgColor"),
+    settingsBgColorHex: document.getElementById("settingsBgColorHex"),
+    settingsTextColor: document.getElementById("settingsTextColor"),
+    settingsTextColorHex: document.getElementById("settingsTextColorHex"),
+    settingsFontPair: document.getElementById("settingsFontPair"),
+    settingsCardRadius: document.getElementById("settingsCardRadius"),
     settingsHeroTitle: document.getElementById("settingsHeroTitle"),
     settingsHeroAccent: document.getElementById("settingsHeroAccent"),
     settingsHeroSubtitle: document.getElementById("settingsHeroSubtitle"),
@@ -1144,6 +1150,7 @@
     contact_title: "✦ Contáctanos ✦",
     contact_subtitle: "¿Tienes dudas sobre un producto o tu pedido? Escríbenos por cualquiera de estos medios.",
     logo_url: "", primary_color: "#D6336C", accent_color: "#E8A33D",
+    bg_color: "#FBF6EC", text_color: "#2B1B17", font_pair: "clasica", card_radius: 18,
     contact_email: "", instagram_url: "", tiktok_url: "", facebook_url: "",
   };
   let pendingLogoFile = null;
@@ -1163,6 +1170,12 @@
     el.settingsPrimaryColorHex.value = settings.primary_color || "#D6336C";
     el.settingsAccentColor.value = settings.accent_color || "#E8A33D";
     el.settingsAccentColorHex.value = settings.accent_color || "#E8A33D";
+    el.settingsBgColor.value = settings.bg_color || "#FBF6EC";
+    el.settingsBgColorHex.value = settings.bg_color || "#FBF6EC";
+    el.settingsTextColor.value = settings.text_color || "#2B1B17";
+    el.settingsTextColorHex.value = settings.text_color || "#2B1B17";
+    el.settingsFontPair.value = settings.font_pair || "clasica";
+    el.settingsCardRadius.value = String(settings.card_radius ?? 18);
     el.settingsHeroTitle.value = settings.hero_title || "";
     el.settingsHeroAccent.value = settings.hero_accent_word || "";
     el.settingsHeroSubtitle.value = settings.hero_subtitle || "";
@@ -1196,6 +1209,8 @@
   }
   linkColorInputs(el.settingsPrimaryColor, el.settingsPrimaryColorHex);
   linkColorInputs(el.settingsAccentColor, el.settingsAccentColorHex);
+  linkColorInputs(el.settingsBgColor, el.settingsBgColorHex);
+  linkColorInputs(el.settingsTextColor, el.settingsTextColorHex);
 
   el.settingsLogoFile.addEventListener("change", () => {
     const file = el.settingsLogoFile.files[0];
@@ -1250,6 +1265,10 @@
         logo_url: logoUrl || "",
         primary_color: el.settingsPrimaryColorHex.value.trim() || "#D6336C",
         accent_color: el.settingsAccentColorHex.value.trim() || "#E8A33D",
+        bg_color: el.settingsBgColorHex.value.trim() || "#FBF6EC",
+        text_color: el.settingsTextColorHex.value.trim() || "#2B1B17",
+        font_pair: el.settingsFontPair.value,
+        card_radius: parseInt(el.settingsCardRadius.value, 10) || 18,
         contact_email: el.settingsEmail.value.trim(),
         instagram_url: el.settingsInstagram.value.trim(),
         tiktok_url: el.settingsTiktok.value.trim(),

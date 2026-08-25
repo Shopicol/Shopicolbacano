@@ -3,362 +3,719 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shopicol Bacano — Lo más bacano para ti</title>
-<meta name="description" id="metaDescription" content="Catálogo Shopicol Bacano: maquillaje, capilares y cuidado personal colombiano al por mayor y detal. Bloom, Purpure, Trendy, Dolce Bella, Pocion, Kaba y más.">
+<title>Panel de administración — Shopicol Bacano</title>
+<meta name="robots" content="noindex, nofollow">
 
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-<!-- Tipografías: Fraunces (display, con carácter) + Plus Jakarta Sans (texto/UI) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css">
-
-<!-- Supabase (opcional): si config.js tiene claves reales, el catálogo se
-     lee en vivo desde la nube; si no, se usa el catálogo local automáticamente. -->
+<link rel="stylesheet" href="/admin/admin.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- EmailJS (opcional): envía una notificación por correo cuando llega
-     un pedido nuevo. Si no está configurado en config.js, simplemente no se envía. -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<!-- ============ DECORATIVE SPARKLE LAYER (hero) ============ -->
-<div class="sparkle-field" aria-hidden="true">
-  <span class="spark s1">✦</span>
-  <span class="spark s2">✦</span>
-  <span class="spark s3">✦</span>
-  <span class="spark s4">✦</span>
-</div>
-
-<!-- ============ HEADER ============ -->
-<header class="site-header" id="siteHeader">
-  <div class="header-inner">
-    <a href="#top" class="brand-mark">
-      <img src="logo.png" alt="Shopicol" class="logo-img" id="headerLogoImg">
-      <em class="logo-bacano" id="headerTagline">Bacano</em>
-    </a>
-
-    <div class="search-wrap">
-      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <input id="searchInput" type="text" placeholder="Buscar por nombre, marca o referencia…" autocomplete="off">
-      <button id="clearSearch" class="clear-btn" aria-label="Limpiar búsqueda" hidden>✕</button>
+<!-- ============ PANTALLA DE LOGIN ============ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="/logo.png" alt="Shopicol" class="logo-img">
+      <em class="logo-bacano">Bacano</em>
     </div>
+    <p class="login-eyebrow">✦ Panel de administración ✦</p>
+    <h1>Hola de nuevo</h1>
+    <p class="login-sub">Ingresa con el correo y contraseña que te crearon en el equipo.</p>
 
-    <button class="mode-toggle" id="modeToggle" aria-pressed="false">
-      <span class="mode-dot"></span>
-      <span class="mode-label">Ver precio <strong id="modeWord">Detal</strong></span>
-    </button>
-
-    <button class="cart-btn" id="cartBtn" aria-label="Ver carrito de compras">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M3 4H5L5.4 6M5.4 6H20L18 13H7L5.4 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <circle cx="9" cy="19" r="1.6" fill="currentColor"/>
-        <circle cx="17" cy="19" r="1.6" fill="currentColor"/>
-      </svg>
-      <span class="cart-count" id="cartCount" hidden>0</span>
-    </button>
-  </div>
-</header>
-
-<!-- ============ BANNERS PROMOCIONALES ============ -->
-<section class="banner-carousel" id="bannerCarousel" hidden>
-  <div class="banner-track" id="bannerTrack"><!-- slides por JS --></div>
-  <button class="banner-nav prev" id="bannerPrev" aria-label="Slide anterior">‹</button>
-  <button class="banner-nav next" id="bannerNext" aria-label="Slide siguiente">›</button>
-  <div class="banner-dots" id="bannerDots"></div>
-</section>
-
-<main id="top">
-
-  <!-- ============ HERO ============ -->
-  <section class="hero">
-    <div class="hero-inner">
-      <p class="eyebrow" id="eyebrowText">✦ Catálogo completo · edición web ✦</p>
-      <h1 id="heroTitle">Lo más <span class="ink-highlight">bacano</span><br>para ti.</h1>
-      <p class="hero-sub" id="heroSubtitle">Maquillaje, capilares y cuidado personal colombiano, directo del catálogo Shopicol.
-      Compra al <strong>detal</strong> sin mínimo, o accede a precio <strong>mayorista</strong> desde $50 en tu compra.</p>
-
-      <div class="hero-stats" id="heroStats">
-        <div class="stat-card">
-          <span class="stat-num" id="statTotal">0</span>
-          <span class="stat-label">productos</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num" id="statBrands">0</span>
-          <span class="stat-label">marcas</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num" id="statStock">0</span>
-          <span class="stat-label">disponibles</span>
-        </div>
-      </div>
-
-      <div class="hero-note">
-        <p id="heroNoteText"><strong>¿Cómo comprar?</strong> El precio <em>Detal</em> es por unidad, sin monto mínimo. El precio <em>Mayor</em> se activa al acumular <strong>$50 o más</strong> en tu pedido — no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 🩷</p>
-      </div>
-    </div>
-
-    <!-- Marquee de marcas: elemento distintivo, como una pared de stickers -->
-    <div class="brand-marquee" aria-hidden="true">
-      <div class="marquee-track" id="marqueeTrack"><!-- filled by JS --></div>
-    </div>
-  </section>
-
-  <!-- ============ DESTACADOS Y EN OFERTA ============ -->
-  <section class="featured-section" id="featuredSection" hidden>
-    <h2 class="featured-title">✦ Destacados y en oferta ✦</h2>
-    <div class="featured-scroll" id="featuredScroll"><!-- filled by JS --></div>
-  </section>
-
-  <!-- ============ FILTER BAR ============ -->
-  <section class="filter-bar" id="filterBar">
-    <div class="filter-bar-inner">
-      <div class="pills-row" id="categoryPills"><!-- filled by JS --></div>
-
-      <div class="filter-controls">
-        <select id="brandSelect" class="select-control" aria-label="Filtrar por marca">
-          <option value="">Todas las marcas</option>
-        </select>
-
-        <select id="sortSelect" class="select-control" aria-label="Ordenar">
-          <option value="relevance">Orden: catálogo</option>
-          <option value="price-asc">Precio: menor a mayor</option>
-          <option value="price-desc">Precio: mayor a menor</option>
-          <option value="name-asc">Nombre: A–Z</option>
-        </select>
-      </div>
-    </div>
-    <p class="results-count" id="resultsCount" aria-live="polite"></p>
-  </section>
-
-  <!-- ============ PRODUCT GRID ============ -->
-  <section class="catalog-section">
-    <div id="productGrid" class="product-grid"><!-- filled by JS --></div>
-    <div id="emptyState" class="empty-state" hidden>
-      <p class="empty-star">✦</p>
-      <h3>No encontramos nada bacano con esos filtros</h3>
-      <p>Prueba con otra palabra, cambia de categoría o quita algún filtro.</p>
-      <button id="resetFilters" class="reset-btn">Ver todo el catálogo</button>
-    </div>
-  </section>
-
-</main>
-
-<!-- ============ MODAL / LIGHTBOX DE PRODUCTO ============ -->
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
-    <div class="modal-img-wrap">
-      <img id="modalImg" src="" alt="">
-      <span class="modal-stamp" id="modalStamp" hidden>Agotado</span>
-      <button class="modal-gallery-nav prev" id="modalGalleryPrev" aria-label="Foto anterior" hidden>‹</button>
-      <button class="modal-gallery-nav next" id="modalGalleryNext" aria-label="Foto siguiente" hidden>›</button>
-    </div>
-    <div class="modal-thumbs" id="modalThumbs" hidden><!-- filled by JS --></div>
-    <div class="modal-body">
-      <p class="modal-brand" id="modalBrand"></p>
-      <h3 id="modalTitle"></h3>
-      <p class="modal-ref" id="modalRef"></p>
-      <div class="modal-prices">
-        <div class="price-box detal">
-          <span>Detal</span>
-          <strong id="modalDetal"></strong>
-        </div>
-        <div class="price-box mayor">
-          <span>Mayor</span>
-          <strong id="modalMayor"></strong>
-        </div>
-      </div>
-      <p class="modal-offer" id="modalOffer" hidden></p>
-      <p class="modal-stock-note" id="modalStockNote" hidden></p>
-      <p class="modal-category" id="modalCategory"></p>
-
-      <div class="modal-tones" id="modalTones" hidden>
-        <span class="modal-tones-label">Elige un tono:</span>
-        <div class="tone-chips" id="toneChips"><!-- filled by JS --></div>
-      </div>
-
-      <div class="modal-cart-row">
-        <div class="qty-stepper">
-          <button type="button" id="modalQtyMinus" aria-label="Restar">−</button>
-          <span id="modalQty">1</span>
-          <button type="button" id="modalQtyPlus" aria-label="Sumar">+</button>
-        </div>
-        <button class="btn-add-cart" id="modalAddCart">Agregar al carrito</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ CARRITO (panel lateral) ============ -->
-<div class="cart-overlay" id="cartOverlay" hidden>
-  <aside class="cart-panel" role="dialog" aria-label="Carrito de compras">
-    <div class="cart-header">
-      <h3>Tu carrito</h3>
-      <button class="modal-close" id="cartClose" aria-label="Cerrar carrito">✕</button>
-    </div>
-
-    <div class="cart-items" id="cartItems"><!-- filled by JS --></div>
-
-    <div class="cart-empty" id="cartEmptyState">
-      <p class="empty-star">✦</p>
-      <p>Tu carrito está vacío.</p>
-    </div>
-
-    <div class="cart-footer" id="cartFooter" hidden>
-      <div class="mayor-progress" id="mayorProgress">
-        <div class="mayor-progress-bar"><div class="mayor-progress-fill" id="mayorProgressFill"></div></div>
-        <p class="mayor-progress-text" id="mayorProgressText"></p>
-      </div>
-      <div class="cart-total-row">
-        <span>Total (<span id="cartPriceModeLabel">Detal</span>)</span>
-        <strong id="cartTotal">$0</strong>
-      </div>
-      <button class="btn-primary btn-block" id="checkoutBtn">Continuar pedido</button>
-    </div>
-  </aside>
-</div>
-
-<!-- ============ CHECKOUT: datos del cliente ============ -->
-<div class="modal-overlay" id="checkoutOverlay" hidden>
-  <div class="modal-card checkout-card">
-    <button class="modal-close" id="checkoutClose" aria-label="Cerrar">✕</button>
-    <h2>Completa tu pedido</h2>
-    <p class="checkout-sub">Con estos datos armamos tu pedido y te contactamos por WhatsApp para confirmar.</p>
-
-    <form id="checkoutForm" class="checkout-form">
-      <p class="checkout-tier-note" id="checkoutTierNote"></p>
-
+    <form id="loginForm" class="login-form">
       <label>
-        <span>Nombre completo *</span>
-        <input type="text" id="custName" required placeholder="Ej: María Pérez">
+        <span>Correo</span>
+        <input type="email" id="loginEmail" required autocomplete="username" placeholder="tucorreo@ejemplo.com">
       </label>
+      <label>
+        <span>Contraseña</span>
+        <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••">
+      </label>
+      <button type="submit" class="btn-primary" id="loginBtn">Entrar al panel</button>
+      <p class="login-error" id="loginError" hidden></p>
+    </form>
+
+    <div class="login-config-warning" id="configWarning" hidden>
+      <p><strong>⚠ Supabase no está configurado todavía.</strong></p>
+      <p>Pega tu <code>Project URL</code> y tu clave <code>anon public</code> en el archivo
+      <code>config.js</code> (en la carpeta raíz del sitio) y crea al menos un usuario en
+      Supabase → Authentication → Users. Luego recarga esta página.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PANEL PRINCIPAL (visible tras login) ============ -->
+<div class="admin-app" id="adminApp" hidden>
+
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-brand">
+        <img src="/logo.png" alt="Shopicol" class="logo-img admin-logo-img">
+        <em class="logo-bacano">Bacano</em>
+        <span class="admin-tag">Admin</span>
+      </div>
+
+      <div class="admin-header-right">
+        <span class="admin-user" id="adminUserEmail"></span>
+        <a href="/index.html" class="btn-ghost" target="_blank">Ver sitio ↗</a>
+        <button class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- Pestañas de navegación -->
+    <nav class="admin-tabs">
+      <button class="admin-tab active" data-tab="products">📦 Productos</button>
+      <button class="admin-tab" data-tab="orders">🧾 Pedidos <span class="tab-badge" id="ordersBadge" hidden>0</span></button>
+      <button class="admin-tab" data-tab="banners">🖼 Banners</button>
+      <button class="admin-tab" data-tab="settings">🎨 Ajustes</button>
+      <button class="admin-tab" data-tab="customers">👥 Clientes</button>
+    </nav>
+
+    <!-- ============ TAB: PRODUCTOS ============ -->
+    <div class="admin-tab-panel" id="tabProducts">
+
+    <!-- Barra de acciones + stats -->
+    <section class="admin-toolbar">
+      <div class="admin-stats">
+        <div class="mini-stat"><strong id="statTotal">0</strong><span>productos</span></div>
+        <div class="mini-stat"><strong id="statAvail">0</strong><span>disponibles</span></div>
+        <div class="mini-stat"><strong id="statBrands">0</strong><span>marcas</span></div>
+      </div>
+
+      <div class="admin-actions">
+        <button class="btn-ghost" id="importBtn">↓ Importar catálogo inicial</button>
+        <button class="btn-ghost" id="bulkUploadBtn">⬆ Cargar desde Excel</button>
+        <input type="file" id="bulkUploadFile" accept=".xlsx,.xls" hidden>
+        <button class="btn-primary" id="newProductBtn">+ Nuevo producto</button>
+      </div>
+    </section>
+
+    <p class="import-hint" id="importHint" hidden>
+      Esto carga el catálogo de <strong>397 productos</strong> extraído del PDF original a tu base de
+      datos de Supabase. Úsalo <strong>una sola vez</strong> (al principio) — si lo corres de nuevo
+      creará productos duplicados. ¿Deseas continuar?
+      <button class="btn-primary btn-sm" id="confirmImportBtn">Sí, importar ahora</button>
+      <button class="btn-ghost btn-sm" id="cancelImportBtn">Cancelar</button>
+    </p>
+
+    <!-- Filtros -->
+    <section class="admin-filters">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="adminSearch" placeholder="Buscar producto, marca o referencia…">
+      </div>
+      <select id="adminCategoryFilter"><option value="">Todas las categorías</option></select>
+      <select id="adminBrandFilter"><option value="">Todas las marcas</option></select>
+      <select id="adminAvailFilter">
+        <option value="">Disponibles y agotados</option>
+        <option value="true">Solo disponibles</option>
+        <option value="false">Solo agotados</option>
+      </select>
+      <label class="toggle-control">
+        <input type="checkbox" id="adminFeaturedFilter">
+        <span>Solo destacados ⭐</span>
+      </label>
+    </section>
+
+    <p class="admin-results-count" id="adminResultsCount"></p>
+
+    <!-- Tabla de productos -->
+    <section class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="col-img"></th>
+            <th>Producto</th>
+            <th>Marca</th>
+            <th>Categoría</th>
+            <th>Detal</th>
+            <th>Mayor</th>
+            <th>Stock</th>
+            <th>Estado</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody"><!-- filas por JS --></tbody>
+      </table>
+      <p class="admin-empty" id="adminEmpty" hidden>No hay productos que coincidan con estos filtros.</p>
+    </section>
+    </div><!-- /tabProducts -->
+
+    <!-- ============ TAB: PEDIDOS ============ -->
+    <div class="admin-tab-panel" id="tabOrders" hidden>
+      <section class="admin-toolbar">
+        <div class="admin-stats">
+          <div class="mini-stat"><strong id="statOrdersTotal">0</strong><span>pedidos</span></div>
+          <div class="mini-stat"><strong id="statOrdersNew">0</strong><span>nuevos</span></div>
+          <div class="mini-stat"><strong id="statOrdersTotalSum">$0</strong><span>en pedidos</span></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn-ghost" id="refreshOrdersBtn">↻ Actualizar</button>
+        </div>
+      </section>
+
+      <section class="admin-filters">
+        <select id="orderStatusFilter">
+          <option value="">Todos los estados</option>
+          <option value="nuevo">Nuevo</option>
+          <option value="tomado">Pedido Tomado</option>
+          <option value="entregado">Entregado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </section>
+
+      <section class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Contacto</th>
+              <th>Entrega</th>
+              <th>Pago</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody"><!-- filas por JS --></tbody>
+        </table>
+        <p class="admin-empty" id="ordersEmpty" hidden>Todavía no hay pedidos.</p>
+      </section>
+    </div><!-- /tabOrders -->
+
+    <!-- ============ TAB: BANNERS ============ -->
+    <div class="admin-tab-panel" id="tabBanners" hidden>
+      <section class="admin-toolbar">
+        <p class="banners-hint">Estos slides aparecen arriba de todo en tu sitio, en el orden que definas.</p>
+        <div class="admin-actions">
+          <button class="btn-primary" id="newBannerBtn">+ Nuevo banner</button>
+        </div>
+      </section>
+
+      <section class="banners-grid" id="bannersGrid"><!-- filas por JS --></section>
+      <p class="admin-empty" id="bannersEmpty" hidden>Todavía no has creado ningún banner.</p>
+    </div><!-- /tabBanners -->
+
+    <!-- ============ TAB: AJUSTES ============ -->
+    <div class="admin-tab-panel" id="tabSettings" hidden>
+      <section class="settings-panel">
+
+        <div class="settings-group">
+          <h3>Marca</h3>
+          <div class="form-row">
+            <label>
+              <span>Logo</span>
+              <div class="image-field">
+                <img id="settingsLogoPreview" alt="" hidden>
+                <input type="file" id="settingsLogoFile" accept="image/*">
+                <input type="text" id="settingsLogoUrl" placeholder="o pega la URL de una imagen">
+              </div>
+              <small id="settingsLogoStatus"></small>
+            </label>
+          </div>
+          <div class="form-row two">
+            <label>
+              <span>Nombre de la tienda</span>
+              <input type="text" id="settingsStoreName" placeholder="Shopicol">
+            </label>
+            <label>
+              <span>Eslogan / palabra destacada</span>
+              <input type="text" id="settingsTagline" placeholder="Bacano">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Colores</h3>
+          <div class="form-row two">
+            <label>
+              <span>Color principal (rosa)</span>
+              <div class="color-field">
+                <input type="color" id="settingsPrimaryColor" value="#D6336C">
+                <input type="text" id="settingsPrimaryColorHex" placeholder="#D6336C">
+              </div>
+            </label>
+            <label>
+              <span>Color secundario (dorado)</span>
+              <div class="color-field">
+                <input type="color" id="settingsAccentColor" value="#E8A33D">
+                <input type="text" id="settingsAccentColorHex" placeholder="#E8A33D">
+              </div>
+            </label>
+          </div>
+          <div class="form-row two">
+            <label>
+              <span>Color de fondo del sitio</span>
+              <div class="color-field">
+                <input type="color" id="settingsBgColor" value="#FBF6EC">
+                <input type="text" id="settingsBgColorHex" placeholder="#FBF6EC">
+              </div>
+            </label>
+            <label>
+              <span>Color del texto principal</span>
+              <div class="color-field">
+                <input type="color" id="settingsTextColor" value="#2B1B17">
+                <input type="text" id="settingsTextColorHex" placeholder="#2B1B17">
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Tipografía y diseño</h3>
+          <div class="form-row">
+            <label>
+              <span>Combinación de letras</span>
+              <select id="settingsFontPair">
+                <option value="clasica">Clásica elegante (Fraunces + Plus Jakarta Sans)</option>
+                <option value="moderna">Moderna minimalista (Poppins + Inter)</option>
+                <option value="divertida">Divertida y redondeada (Baloo 2 + Nunito)</option>
+                <option value="editorial">Editorial refinada (Playfair Display + Lora)</option>
+                <option value="calida">Cálida artesanal (DM Serif Display + DM Sans)</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Bordes de las tarjetas de producto</span>
+              <select id="settingsCardRadius">
+                <option value="6">Cuadrado</option>
+                <option value="18">Suave (por defecto)</option>
+                <option value="28">Redondeado</option>
+                <option value="40">Muy redondeado</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Textos del inicio</h3>
+          <div class="form-row">
+            <label>
+              <span>Línea pequeña arriba del título</span>
+              <input type="text" id="settingsEyebrow" placeholder="✦ Catálogo completo · edición web ✦">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Título principal</span>
+              <input type="text" id="settingsHeroTitle" placeholder="Lo más bacano para ti.">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Palabra destacada dentro del título (se resalta en rosa)</span>
+              <input type="text" id="settingsHeroAccent" placeholder="bacano">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Frase de bienvenida (debajo del título)</span>
+              <textarea id="settingsHeroSubtitle" rows="3"></textarea>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Cuadro "¿Cómo comprar?"</span>
+              <textarea id="settingsHeroNote" rows="3"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Pie de página</h3>
+          <div class="form-row">
+            <label>
+              <span>Descripción bajo el logo</span>
+              <textarea id="settingsFooterDescription" rows="2"></textarea>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Línea inferior (todo abajo del sitio)</span>
+              <input type="text" id="settingsFooterBottom" placeholder="Catálogo generado a partir del PDF original...">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>SEO / buscadores</h3>
+          <div class="form-row">
+            <label>
+              <span>Descripción del sitio (aparece en Google y al compartir el link)</span>
+              <textarea id="settingsMetaDescription" rows="2"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Contáctanos</h3>
+          <p class="settings-hint">El WhatsApp se configura aparte, en el archivo config.js. Aquí solo agregas correo y redes.</p>
+          <div class="form-row two">
+            <label>
+              <span>Título de la sección</span>
+              <input type="text" id="settingsContactTitle" placeholder="✦ Contáctanos ✦">
+            </label>
+            <label>
+              <span>Frase debajo del título</span>
+              <input type="text" id="settingsContactSubtitle" placeholder="¿Tienes dudas...?">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Correo de contacto</span>
+              <input type="email" id="settingsEmail" placeholder="contacto@shopicol.com">
+            </label>
+          </div>
+          <div class="form-row two">
+            <label>
+              <span>Instagram (URL completa)</span>
+              <input type="text" id="settingsInstagram" placeholder="https://instagram.com/shopicolbacano">
+            </label>
+            <label>
+              <span>TikTok (URL completa)</span>
+              <input type="text" id="settingsTiktok" placeholder="https://tiktok.com/@shopicolbacano">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Facebook (URL completa)</span>
+              <input type="text" id="settingsFacebook" placeholder="https://facebook.com/shopicolbacano">
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <div class="form-actions-right">
+            <button type="button" class="btn-primary" id="saveSettingsBtn">Guardar ajustes</button>
+          </div>
+        </div>
+        <p class="form-error" id="settingsFormError" hidden></p>
+      </section>
+    </div><!-- /tabSettings -->
+
+    <!-- ============ TAB: CLIENTES ============ -->
+    <div class="admin-tab-panel" id="tabCustomers" hidden>
+      <section class="admin-toolbar">
+        <div class="admin-stats">
+          <div class="mini-stat"><strong id="statCustomersTotal">0</strong><span>clientes</span></div>
+          <div class="mini-stat"><strong id="statCustomersOrders">0</strong><span>pedidos totales</span></div>
+          <div class="mini-stat"><strong id="statCustomersSpent">$0</strong><span>total comprado</span></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn-primary" id="exportCustomersBtn">⬇ Exportar CSV (para ads)</button>
+        </div>
+      </section>
+
+      <p class="banners-hint">Cada cliente aparece una sola vez, con su historial acumulado — útil para armar audiencias en Meta/Facebook Ads o Google Ads con el CSV.</p>
+
+      <section class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Ciudad</th>
+              <th>Pedidos</th>
+              <th>Total comprado</th>
+              <th>Último pedido</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody"><!-- filas por JS --></tbody>
+        </table>
+        <p class="admin-empty" id="customersEmpty" hidden>Todavía no hay clientes con pedidos registrados.</p>
+      </section>
+    </div><!-- /tabCustomers -->
+
+  </main>
+</div>
+
+<!-- ============ MODAL: crear / editar producto ============ -->
+<div class="modal-overlay" id="productModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="productModalClose" aria-label="Cerrar">✕</button>
+    <h2 id="productModalTitle">Nuevo producto</h2>
+
+    <form id="productForm" class="product-form">
+      <input type="hidden" id="fieldId">
+
+      <div class="form-row">
+        <label class="grow">
+          <span>Nombre del producto *</span>
+          <input type="text" id="fieldName" required placeholder="Ej: Base Líquida Velvet Touch">
+        </label>
+      </div>
 
       <div class="form-row two">
         <label>
-          <span>Teléfono *</span>
-          <input type="tel" id="custPhone" required placeholder="Ej: 0412 1234567">
+          <span>Marca *</span>
+          <input type="text" id="fieldBrand" list="brandOptions" required placeholder="Ej: Dolce Bella">
+          <datalist id="brandOptions"></datalist>
         </label>
         <label>
-          <span>Ciudad *</span>
-          <input type="text" id="custCity" required placeholder="Ej: Caracas">
+          <span>Categoría *</span>
+          <input type="text" id="fieldCategory" list="categoryOptions" required placeholder="Ej: Rostro">
+          <datalist id="categoryOptions"></datalist>
         </label>
       </div>
 
-      <label>
-        <span>Correo (opcional)</span>
-        <input type="email" id="custEmail" placeholder="Ej: maria@ejemplo.com">
-      </label>
+      <div class="form-row two">
+        <label>
+          <span>Referencia</span>
+          <input type="text" id="fieldRef" placeholder="Ej: VG8207">
+        </label>
+        <label>
+          <span>Estado</span>
+          <select id="fieldAvail">
+            <option value="true">Disponible</option>
+            <option value="false">Agotado</option>
+          </select>
+        </label>
+      </div>
 
-      <label>
-        <span>Método de pago *</span>
-        <select id="custPayment" required>
-          <option value="">Selecciona una opción</option>
-          <option value="Pago móvil">Pago móvil</option>
-          <option value="Efectivo en Caracas">Efectivo en Caracas</option>
-          <option value="Binance">Binance</option>
-          <option value="Zelle">Zelle</option>
-        </select>
-      </label>
+      <div class="form-row two">
+        <label>
+          <span>Precio Detal (USD) *</span>
+          <input type="number" id="fieldDetal" step="0.01" min="0" required placeholder="0.00">
+        </label>
+        <label>
+          <span>Precio Mayor (USD) *</span>
+          <input type="number" id="fieldMayor" step="0.01" min="0" required placeholder="0.00">
+        </label>
+      </div>
 
-      <label>
-        <span>Método de entrega *</span>
-        <select id="custDelivery" required>
-          <option value="">Selecciona una opción</option>
-          <option value="Delivery">Delivery</option>
-          <option value="Pickup en Caracas">Pickup en Caracas</option>
-          <option value="Envío nacional">Envío nacional (cobro a destino)</option>
-        </select>
-      </label>
+      <div class="form-row">
+        <label>
+          <span>Precio especial "Ahora" (opcional)</span>
+          <input type="number" id="fieldOffer" step="0.01" min="0" placeholder="Déjalo vacío si no aplica">
+        </label>
+      </div>
 
-      <label id="addressField" hidden>
-        <span>Dirección de entrega *</span>
-        <textarea id="custAddress" rows="2" placeholder="Referencia, urbanización, calle, casa/apto…"></textarea>
-      </label>
+      <div class="form-row">
+        <label>
+          <span>Stock disponible (opcional)</span>
+          <input type="number" id="fieldStock" step="1" min="0" placeholder="Déjalo vacío si no controlas stock de este producto">
+          <small>Si lo llenas y llega a 0, el producto se marca "Agotado" automáticamente.</small>
+        </label>
+      </div>
 
-      <p class="pickup-note" id="pickupNote" hidden>
-        📍 Retira tu pedido en nuestro punto en Caracas — te compartimos la dirección exacta por WhatsApp al confirmar.
-      </p>
+      <div class="form-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="fieldFeatured">
+          <span>⭐ Destacado (aparece en el carrusel de la portada)</span>
+        </label>
+      </div>
 
-      <label id="nationalNote" hidden>
-        <span>Nota para el envío nacional (opcional)</span>
-        <textarea id="custNote" rows="2" placeholder="Empresa de encomienda de tu preferencia, agencia, etc."></textarea>
-      </label>
+      <div class="form-row">
+        <label>
+          <span>Imagen principal</span>
+          <div class="image-field">
+            <img id="imagePreview" alt="" hidden>
+            <input type="file" id="fieldImageFile" accept="image/*">
+            <input type="text" id="fieldImageUrl" placeholder="o pega la URL de una imagen">
+          </div>
+          <small id="imageUploadStatus"></small>
+        </label>
+      </div>
 
-      <button type="submit" class="btn-primary btn-block" id="submitOrderBtn">Enviar pedido por WhatsApp</button>
-      <p class="form-error" id="checkoutError" hidden></p>
+      <div class="form-row">
+        <label>
+          <span>Galería (fotos adicionales)</span>
+          <div id="galleryList" class="gallery-list"><!-- filas por JS --></div>
+          <button type="button" class="btn-ghost btn-sm" id="addGalleryPhotoBtn" style="margin-top:8px;">+ Agregar foto</button>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Tonos disponibles (opcional, separados por coma)</span>
+          <input type="text" id="fieldTones" placeholder="Ej: Nude, Rosa, Coral">
+          <small>El cliente va a poder elegir uno de estos tonos antes de agregar al carrito. Déjalo vacío si el producto no tiene variantes de tono.</small>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Notas internas (opcional, no se muestran al público)</span>
+          <textarea id="fieldNote" rows="2" placeholder="Ej: pendiente de confirmar color con proveedor"></textarea>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-danger" id="deleteProductBtn" hidden>Eliminar producto</button>
+        <div class="form-actions-right">
+          <button type="button" class="btn-ghost" id="cancelProductBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveProductBtn">Guardar producto</button>
+        </div>
+      </div>
+      <p class="form-error" id="productFormError" hidden></p>
     </form>
-
-    <div class="checkout-success" id="checkoutSuccess" hidden>
-      <p class="empty-star">✦</p>
-      <h3>¡Pedido enviado!</h3>
-      <p>Se abrió WhatsApp con tu pedido listo para enviar. En cuanto lo confirmes, nos pondremos en contacto contigo.</p>
-      <button class="btn-primary" id="checkoutDoneBtn">Cerrar</button>
-    </div>
   </div>
 </div>
 
-<!-- ============ CONTÁCTANOS ============ -->
-<section class="contact-section" id="contactSection">
-  <h2 class="contact-title" id="contactTitle">✦ Contáctanos ✦</h2>
-  <p class="contact-sub" id="contactSubtitle">¿Tienes dudas sobre un producto o tu pedido? Escríbenos por cualquiera de estos medios.</p>
-  <div class="contact-links" id="contactLinks"><!-- filled by JS --></div>
-</section>
+<!-- ============ MODAL: detalle de pedido ============ -->
+<div class="modal-overlay" id="orderModalOverlay" hidden>
+  <div class="modal-card order-modal-card">
+    <button class="modal-close" id="orderModalClose" aria-label="Cerrar">✕</button>
+    <h2>Detalle del pedido</h2>
+    <div id="orderModalBody"><!-- por JS --></div>
+    <button class="btn-primary btn-block" id="downloadReceiptBtn">⬇ Descargar recibo (PDF)</button>
+  </div>
+</div>
 
-<!-- ============ FOOTER ============ -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <img src="logo.png" alt="Shopicol" class="logo-img footer-logo-img" id="footerLogoImg">
-      <em class="logo-bacano footer-logo-bacano" id="footerTagline">Bacano</em>
-      <p id="footerDescription">Productos colombianos de buena calidad, a un buen precio. ¡Llegaste al lugar indicado!</p>
-    </div>
-
-    <div class="footer-col">
-      <h4>Modalidad de compra</h4>
-      <ul>
-        <li><strong>Detal:</strong> escoge como gustes, sin mínimo de monto ni de piezas.</li>
-        <li><strong>Mayor:</strong> compras desde $50 en adelante (por monto, no por cantidad).</li>
-      </ul>
-    </div>
-
-    <div class="footer-col">
-      <h4>Marcas en catálogo</h4>
-      <p id="footerBrandsList" class="footer-brands-text"></p>
+<!-- ============ RECIBO IMPRIMIBLE (oculto, solo visible al imprimir/descargar) ============ -->
+<div id="receiptPrintArea" class="receipt-print-area">
+  <div class="receipt-header">
+    <img src="/logo.png" alt="" class="receipt-logo" id="receiptLogo">
+    <div class="receipt-header-text">
+      <h1 id="receiptStoreName">Shopicol Bacano</h1>
+      <p>Recibo de pedido</p>
     </div>
   </div>
-  <p class="footer-bottom" id="footerBottom">Catálogo generado a partir del PDF original de Shopicol Bacano · Gracias por preferirnos ✦</p>
-</footer>
 
-<script src="products.js"></script>
-<script src="config.js"></script>
-<script src="supabase-client.js"></script>
+  <div class="receipt-meta">
+    <div><span>Pedido N.º</span><strong id="receiptOrderId"></strong></div>
+    <div><span>Fecha</span><strong id="receiptDate"></strong></div>
+    <div><span>Estado</span><strong id="receiptStatus"></strong></div>
+  </div>
 
-<!-- Google Analytics (opcional): solo se activa si GA_MEASUREMENT_ID
-     tiene un ID real en config.js. Se carga de forma condicional para
-     no hacer peticiones innecesarias si no está configurado. -->
-<script>
-  if (typeof GA_MEASUREMENT_ID !== "undefined" && GA_MEASUREMENT_ID && !GA_MEASUREMENT_ID.includes("PEGA_AQUI")) {
-    var gaScript = document.createElement("script");
-    gaScript.async = true;
-    gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_MEASUREMENT_ID;
-    document.head.appendChild(gaScript);
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
-    window.gtag = gtag;
-    gtag("js", new Date());
-    gtag("config", GA_MEASUREMENT_ID);
-  }
-</script>
+  <div class="receipt-customer">
+    <h3>Datos del cliente</h3>
+    <div class="receipt-grid">
+      <div><span>Nombre</span><strong id="receiptName"></strong></div>
+      <div><span>Teléfono</span><strong id="receiptPhone"></strong></div>
+      <div><span>Ciudad</span><strong id="receiptCity"></strong></div>
+      <div><span>Método de pago</span><strong id="receiptPayment"></strong></div>
+      <div><span>Entrega</span><strong id="receiptDelivery"></strong></div>
+      <div><span>Dirección</span><strong id="receiptAddress"></strong></div>
+    </div>
+    <p class="receipt-note" id="receiptNoteRow" hidden><span>Nota:</span> <span id="receiptNote"></span></p>
+  </div>
 
-<script src="script.js"></script>
+  <table class="receipt-items-table">
+    <thead>
+      <tr><th></th><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+    </thead>
+    <tbody id="receiptItemsBody"><!-- por JS --></tbody>
+  </table>
+
+  <div class="receipt-total-row">
+    <span>Total (<span id="receiptPriceMode">Detal</span>)</span>
+    <strong id="receiptTotal">$0</strong>
+  </div>
+
+  <p class="receipt-footer">Gracias por tu compra ✦ Shopicol Bacano — Lo más bacano para ti</p>
+</div>
+
+<!-- ============ MODAL: carga masiva desde Excel ============ -->
+<div class="modal-overlay" id="bulkModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="bulkModalClose" aria-label="Cerrar">✕</button>
+    <h2>Cargar productos desde Excel</h2>
+    <p class="settings-hint">Revisa el resumen antes de confirmar. Esto siempre <strong>agrega productos nuevos</strong> — no actualiza productos existentes.</p>
+
+    <div id="bulkSummary" class="bulk-summary"><!-- por JS --></div>
+
+    <div id="bulkErrorsList" class="bulk-errors" hidden></div>
+
+    <div class="form-actions">
+      <div class="form-actions-right">
+        <button type="button" class="btn-ghost" id="cancelBulkBtn">Cancelar</button>
+        <button type="button" class="btn-primary" id="confirmBulkBtn">Cargar productos válidos</button>
+      </div>
+    </div>
+    <p class="form-error" id="bulkFormError" hidden></p>
+  </div>
+</div>
+
+<!-- ============ MODAL: crear / editar banner ============ -->
+<div class="modal-overlay" id="bannerModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="bannerModalClose" aria-label="Cerrar">✕</button>
+    <h2 id="bannerModalTitle">Nuevo banner</h2>
+
+    <form id="bannerForm" class="product-form">
+      <input type="hidden" id="bannerFieldId">
+
+      <div class="form-row">
+        <label class="grow">
+          <span>Título *</span>
+          <input type="text" id="bannerFieldTitle" required placeholder="Ej: ¡Nueva colección disponible!">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label class="grow">
+          <span>Subtítulo (opcional)</span>
+          <input type="text" id="bannerFieldSubtitle" placeholder="Ej: Envíos a toda Venezuela">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Imagen de fondo</span>
+          <div class="image-field">
+            <img id="bannerImagePreview" alt="" hidden>
+            <input type="file" id="bannerFieldImageFile" accept="image/*">
+            <input type="text" id="bannerFieldImageUrl" placeholder="o pega la URL de una imagen">
+          </div>
+          <small id="bannerImageUploadStatus"></small>
+        </label>
+      </div>
+
+      <div class="form-row two">
+        <label>
+          <span>Texto del botón (opcional)</span>
+          <input type="text" id="bannerFieldButtonText" placeholder="Ej: Ver catálogo">
+        </label>
+        <label>
+          <span>Link del botón (opcional)</span>
+          <input type="text" id="bannerFieldButtonLink" placeholder="Ej: #top">
+        </label>
+      </div>
+
+      <div class="form-row two">
+        <label>
+          <span>Orden</span>
+          <input type="number" id="bannerFieldOrder" min="0" value="0">
+        </label>
+        <label class="checkbox-label" style="margin-top:20px;">
+          <input type="checkbox" id="bannerFieldActive" checked>
+          <span>Activo (visible en el sitio)</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-danger" id="deleteBannerBtn" hidden>Eliminar banner</button>
+        <div class="form-actions-right">
+          <button type="button" class="btn-ghost" id="cancelBannerBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveBannerBtn">Guardar banner</button>
+        </div>
+      </div>
+      <p class="form-error" id="bannerFormError" hidden></p>
+    </form>
+  </div>
+</div>
+
+<!-- ============ TOASTS ============ -->
+<div class="toast" id="toast" hidden></div>
+
+<script src="/products.js"></script>
+<script src="/config.js"></script>
+<script src="/supabase-client.js"></script>
+<script src="/admin/admin.js"></script>
 </body>
 </html>
