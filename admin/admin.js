@@ -33,6 +33,16 @@
     cancelImportBtn: document.getElementById("cancelImportBtn"),
     newProductBtn: document.getElementById("newProductBtn"),
 
+    bulkUploadBtn: document.getElementById("bulkUploadBtn"),
+    bulkUploadFile: document.getElementById("bulkUploadFile"),
+    bulkModalOverlay: document.getElementById("bulkModalOverlay"),
+    bulkModalClose: document.getElementById("bulkModalClose"),
+    bulkSummary: document.getElementById("bulkSummary"),
+    bulkErrorsList: document.getElementById("bulkErrorsList"),
+    cancelBulkBtn: document.getElementById("cancelBulkBtn"),
+    confirmBulkBtn: document.getElementById("confirmBulkBtn"),
+    bulkFormError: document.getElementById("bulkFormError"),
+
     adminSearch: document.getElementById("adminSearch"),
     adminCategoryFilter: document.getElementById("adminCategoryFilter"),
     adminBrandFilter: document.getElementById("adminBrandFilter"),
@@ -1307,6 +1317,159 @@
     }
 
     showToast(`Importación completa: ${inserted} productos agregados`);
+    await loadProducts();
+  });
+
+  /* ---------------------------------------------------------------
+     Carga masiva de productos desde un archivo Excel (.xlsx)
+     --------------------------------------------------------------- */
+  const VALID_CATEGORIES_HINT = ["Rostro", "Ojos", "Labios", "Cejas", "Brochas y Pinceles", "Capilar", "Cuidado Corporal", "Cuidado Facial", "Accesorios", "Otros"];
+  let pendingBulkRows = [];
+
+  function parseBoolField(value) {
+    const v = String(value ?? "").trim().toLowerCase();
+    return v === "si" || v === "sí" || v === "true" || v === "1" || v === "yes";
+  }
+
+  function parseBulkExcel(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const workbook = XLSX.read(e.target.result, { type: "array" });
+          const sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes("producto")) || workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+          resolve(json);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function validateBulkRows(rawRows) {
+    const valid = [];
+    const errors = [];
+
+    rawRows.forEach((row, idx) => {
+      const lineNum = idx + 2; // +2 porque la fila 1 es el encabezado
+      const name = String(row["Nombre"] || "").trim();
+      const brand = String(row["Marca"] || "").trim();
+      const category = String(row["Categoria"] || row["Categoría"] || "").trim();
+      const detal = parseFloat(row["Precio_Detal"]);
+      const mayor = parseFloat(row["Precio_Mayor"]);
+
+      const rowErrors = [];
+      if (!name) rowErrors.push("falta Nombre");
+      if (!brand) rowErrors.push("falta Marca");
+      if (!category) rowErrors.push("falta Categoria");
+      if (isNaN(detal)) rowErrors.push("Precio_Detal inválido");
+      if (isNaN(mayor)) rowErrors.push("Precio_Mayor inválido");
+
+      if (rowErrors.length) {
+        errors.push(`Fila ${lineNum}: ${rowErrors.join(", ")}`);
+        return;
+      }
+
+      const offerRaw = row["Precio_Oferta"];
+      const stockRaw = row["Stock"];
+      const tonesRaw = String(row["Tonos"] || "").trim();
+
+      valid.push({
+        name, brand, category,
+        ref: String(row["Referencia"] || "").trim(),
+        detal, mayor,
+        offer: (offerRaw !== "" && offerRaw !== undefined && !isNaN(parseFloat(offerRaw))) ? parseFloat(offerRaw) : null,
+        stock: (stockRaw !== "" && stockRaw !== undefined && !isNaN(parseInt(stockRaw, 10))) ? parseInt(stockRaw, 10) : null,
+        avail: row["Disponible"] === "" ? true : parseBoolField(row["Disponible"]),
+        featured: parseBoolField(row["Destacado"]),
+        tones: tonesRaw,
+        image: String(row["Imagen_URL"] || "").trim(),
+        note: String(row["Notas"] || "").trim(),
+        gallery_images: [],
+      });
+    });
+
+    return { valid, errors };
+  }
+
+  el.bulkUploadBtn.addEventListener("click", () => el.bulkUploadFile.click());
+
+  el.bulkUploadFile.addEventListener("change", async () => {
+    const file = el.bulkUploadFile.files[0];
+    el.bulkUploadFile.value = "";
+    if (!file) return;
+
+    if (typeof XLSX === "undefined") {
+      showToast("No se pudo cargar el lector de Excel. Revisa tu conexión a internet.", true);
+      return;
+    }
+
+    try {
+      const rawRows = await parseBulkExcel(file);
+      const { valid, errors } = validateBulkRows(rawRows);
+      pendingBulkRows = valid;
+
+      el.bulkSummary.innerHTML = `
+        <div class="bulk-stat ok"><strong>${valid.length}</strong><span>listos para cargar</span></div>
+        <div class="bulk-stat bad"><strong>${errors.length}</strong><span>con errores (se omiten)</span></div>
+        <div class="bulk-stat"><strong>${rawRows.length}</strong><span>filas totales</span></div>
+      `;
+      if (errors.length) {
+        el.bulkErrorsList.hidden = false;
+        el.bulkErrorsList.innerHTML = errors.slice(0, 30).map(e => `<p>${e}</p>`).join("") +
+          (errors.length > 30 ? `<p>…y ${errors.length - 30} más.</p>` : "");
+      } else {
+        el.bulkErrorsList.hidden = true;
+        el.bulkErrorsList.innerHTML = "";
+      }
+      el.confirmBulkBtn.disabled = valid.length === 0;
+      el.bulkFormError.hidden = true;
+      el.bulkModalOverlay.hidden = false;
+      document.body.style.overflow = "hidden";
+    } catch (err) {
+      showToast("No se pudo leer el archivo Excel: " + err.message, true);
+    }
+  });
+
+  function closeBulkModal() {
+    el.bulkModalOverlay.hidden = true;
+    document.body.style.overflow = "";
+    pendingBulkRows = [];
+  }
+  el.bulkModalClose.addEventListener("click", closeBulkModal);
+  el.cancelBulkBtn.addEventListener("click", closeBulkModal);
+  el.bulkModalOverlay.addEventListener("click", (e) => { if (e.target === el.bulkModalOverlay) closeBulkModal(); });
+
+  el.confirmBulkBtn.addEventListener("click", async () => {
+    if (!pendingBulkRows.length) return;
+    el.confirmBulkBtn.disabled = true;
+    el.confirmBulkBtn.textContent = "Cargando…";
+
+    const chunkSize = 100;
+    let inserted = 0;
+    let lastError = null;
+    for (let i = 0; i < pendingBulkRows.length; i += chunkSize) {
+      const chunk = pendingBulkRows.slice(i, i + chunkSize);
+      const { error } = await supabaseClient.from("products").insert(chunk);
+      if (error) { lastError = error; break; }
+      inserted += chunk.length;
+    }
+
+    el.confirmBulkBtn.disabled = false;
+    el.confirmBulkBtn.textContent = "Cargar productos válidos";
+
+    if (lastError) {
+      el.bulkFormError.textContent = "Error al cargar: " + lastError.message;
+      el.bulkFormError.hidden = false;
+      return;
+    }
+
+    closeBulkModal();
+    showToast(`${inserted} productos cargados correctamente`);
     await loadProducts();
   });
 

@@ -384,6 +384,24 @@ small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; fon
 .settings-group .form-row{ margin-bottom:14px; }
 .settings-group .form-row:last-child{ margin-bottom:0; }
 .settings-hint{ font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; }
+
+.bulk-summary{
+  display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap;
+}
+.bulk-stat{
+  background:var(--cream-deep); border-radius:10px; padding:10px 18px;
+  text-align:center; flex:1; min-width:100px;
+}
+.bulk-stat strong{ display:block; font-family:var(--font-display); font-size:22px; }
+.bulk-stat.ok strong{ color:#227a45; }
+.bulk-stat.bad strong{ color:var(--danger); }
+.bulk-stat span{ font-size:11px; text-transform:uppercase; color:var(--ink-soft); }
+.bulk-errors{
+  background:var(--danger-soft); border-radius:10px; padding:12px 16px;
+  max-height:180px; overflow-y:auto; margin-bottom:16px;
+}
+.bulk-errors[hidden]{ display:none; }
+.bulk-errors p{ margin:0 0 6px; font-size:12.5px; color:var(--danger); }
 .color-field{ display:flex; gap:8px; align-items:center; }
 .color-field input[type="color"]{
   width:44px; height:38px; border:1.5px solid var(--line); border-radius:8px;

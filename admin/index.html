@@ -12,6 +12,7 @@
 
 <link rel="stylesheet" href="/admin/admin.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -91,6 +92,8 @@
 
       <div class="admin-actions">
         <button class="btn-ghost" id="importBtn">↓ Importar catálogo inicial</button>
+        <button class="btn-ghost" id="bulkUploadBtn">⬆ Cargar desde Excel</button>
+        <input type="file" id="bulkUploadFile" accept=".xlsx,.xls" hidden>
         <button class="btn-primary" id="newProductBtn">+ Nuevo producto</button>
       </div>
     </section>
@@ -572,6 +575,27 @@
   </div>
 
   <p class="receipt-footer">Gracias por tu compra ✦ Shopicol Bacano — Lo más bacano para ti</p>
+</div>
+
+<!-- ============ MODAL: carga masiva desde Excel ============ -->
+<div class="modal-overlay" id="bulkModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="bulkModalClose" aria-label="Cerrar">✕</button>
+    <h2>Cargar productos desde Excel</h2>
+    <p class="settings-hint">Revisa el resumen antes de confirmar. Esto siempre <strong>agrega productos nuevos</strong> — no actualiza productos existentes.</p>
+
+    <div id="bulkSummary" class="bulk-summary"><!-- por JS --></div>
+
+    <div id="bulkErrorsList" class="bulk-errors" hidden></div>
+
+    <div class="form-actions">
+      <div class="form-actions-right">
+        <button type="button" class="btn-ghost" id="cancelBulkBtn">Cancelar</button>
+        <button type="button" class="btn-primary" id="confirmBulkBtn">Cargar productos válidos</button>
+      </div>
+    </div>
+    <p class="form-error" id="bulkFormError" hidden></p>
+  </div>
 </div>
 
 <!-- ============ MODAL: crear / editar banner ============ -->
