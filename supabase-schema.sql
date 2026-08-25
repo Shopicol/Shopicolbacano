@@ -1,6 +1,4 @@
--- =====================================================================
--- SHOPICOL BACANO — esquema de base de datos para Supabase
--- =====================================================================
+-- SHOPICOL BACANO - esquema de base de datos para Supabase
 -- CÓMO USAR ESTE ARCHIVO:
 -- 1. Entra a tu proyecto en supabase.com
 -- 2. En el menú lateral, ve a "SQL Editor"
@@ -9,11 +7,8 @@
 -- 5. Haz clic en "Run" (o Ctrl+Enter)
 -- Esto crea la tabla de productos, activa la seguridad, y crea el
 -- espacio para guardar las imágenes que suban desde el panel.
--- =====================================================================
 
--- ---------------------------------------------------------------------
 -- 1. Tabla principal de productos
--- ---------------------------------------------------------------------
 create table if not exists products (
   id          bigint generated always as identity primary key,
   name        text not null,
@@ -24,17 +19,23 @@ create table if not exists products (
   detal       numeric(10,2) default 0,
   avail       boolean default true,
   offer       numeric(10,2),          -- precio especial "Ahora" (opcional)
-  image       text default '',        -- URL pública de la imagen
+  image       text default '',        -- URL pública de la imagen principal
+  gallery_images jsonb default '[]'::jsonb, -- fotos adicionales (galería)
+  tones       text default '',        -- tonos disponibles, separados por coma (ej: "Nude, Rosa, Coral")
+  stock       integer,                -- cantidad en inventario (opcional; vacío = no se controla stock)
   note        text default '',        -- notas internas del equipo (opcional)
   featured    boolean default false,  -- aparece en el carrusel de destacados
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
 
--- Si la tabla ya existía de una instalación anterior, agrega la columna nueva
+-- Si la tabla ya existía de una instalación anterior, agrega las columnas nuevas
 alter table products add column if not exists featured boolean default false;
+alter table products add column if not exists gallery_images jsonb default '[]'::jsonb;
+alter table products add column if not exists tones text default '';
+alter table products add column if not exists stock integer;
 
-comment on table products is 'Catálogo de productos Shopicol Bacano — editable desde el panel de administración';
+comment on table products is 'Catálogo de productos Shopicol Bacano - editable desde el panel de administración';
 
 -- Refresca automáticamente "updated_at" cada vez que se edita una fila
 create or replace function set_updated_at()
@@ -50,11 +51,9 @@ create trigger trg_products_updated_at
   before update on products
   for each row execute function set_updated_at();
 
--- ---------------------------------------------------------------------
 -- 2. Seguridad (Row Level Security)
 --    - Cualquier visitante de la web puede LEER el catálogo (público)
 --    - Solo usuarios logueados (tu equipo) pueden CREAR/EDITAR/BORRAR
--- ---------------------------------------------------------------------
 alter table products enable row level security;
 
 drop policy if exists "Lectura pública del catálogo" on products;
@@ -82,17 +81,13 @@ create policy "Equipo puede borrar productos"
   to authenticated
   using (true);
 
--- ---------------------------------------------------------------------
 -- 3. Índices para que el buscador y los filtros sean rápidos
--- ---------------------------------------------------------------------
 create index if not exists idx_products_category on products (category);
 create index if not exists idx_products_brand on products (brand);
 create index if not exists idx_products_avail on products (avail);
 
--- ---------------------------------------------------------------------
 -- 4. Espacio de almacenamiento para las fotos de producto que se
 --    suban desde el panel de administración
--- ---------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do nothing;
@@ -121,16 +116,15 @@ create policy "Equipo puede borrar imágenes"
   to authenticated
   using (bucket_id = 'product-images');
 
--- =====================================================================
 -- 5. PEDIDOS (carrito de compras)
 --    Cualquier visitante puede CREAR un pedido (checkout público), pero
---    solo tu equipo logueado puede VER y ACTUALIZAR los pedidos — así
+--    solo tu equipo logueado puede VER y ACTUALIZAR los pedidos - así
 --    los datos de tus clientes quedan privados, visibles solo en el panel.
--- =====================================================================
 create table if not exists orders (
   id              bigint generated always as identity primary key,
   customer_name   text not null,
   phone           text not null,
+  email           text default '',   -- opcional, para poder armar audiencias de anuncios (ads)
   city            text not null,
   payment_method  text not null,     -- "Pago móvil" | "Efectivo en Caracas" | "Binance" | "Zelle"
   delivery_method text not null,     -- "Delivery" | "Pickup en Caracas" | "Envío nacional"
@@ -138,12 +132,13 @@ create table if not exists orders (
   note            text default '',  -- nota adicional (ej. datos de envío nacional)
   items           jsonb not null,    -- [{id, name, qty, price}, ...]
   total           numeric(10,2) not null default 0,
-  price_mode      text default 'detal', -- "detal" | "mayor" — con qué precio se armó el pedido
+  price_mode      text default 'detal', -- "detal" | "mayor" - con qué precio se armó el pedido
   status          text not null default 'nuevo', -- "nuevo" | "tomado" | "entregado" | "cancelado"
   created_at      timestamptz default now()
 );
 
 alter table orders enable row level security;
+alter table orders add column if not exists email text default '';
 
 drop policy if exists "Cualquiera puede crear un pedido" on orders;
 create policy "Cualquiera puede crear un pedido"
@@ -173,9 +168,7 @@ create policy "Solo el equipo puede borrar pedidos"
 create index if not exists idx_orders_status on orders (status);
 create index if not exists idx_orders_created on orders (created_at desc);
 
--- =====================================================================
 -- 6. BANNERS (slides promocionales del inicio del sitio)
--- =====================================================================
 create table if not exists banners (
   id          bigint generated always as identity primary key,
   title       text not null,
@@ -215,12 +208,10 @@ create policy "Equipo administra banners - delete"
   to authenticated
   using (true);
 
--- =====================================================================
 -- 7. AJUSTES DEL SITIO (logo, colores, textos, contacto)
 --    Es una tabla de una sola fila (id=1) que controla la apariencia
 --    y los datos de contacto del sitio público, editable desde el
 --    panel de administración → pestaña "Ajustes".
--- =====================================================================
 create table if not exists site_settings (
   id              int primary key default 1,
   store_name      text default 'Shopicol',
@@ -230,7 +221,7 @@ create table if not exists site_settings (
   hero_title      text default 'Lo más bacano para ti.',
   hero_accent_word text default 'bacano',
   hero_subtitle   text default 'Maquillaje, capilares y cuidado personal colombiano, directo del catálogo Shopicol. Compra al detal sin mínimo, o accede a precio mayorista desde $50 en tu compra.',
-  hero_note_text  text default '¿Cómo comprar? El precio Detal es por unidad, sin monto mínimo. El precio Mayor se activa al acumular $50 o más en tu pedido — no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 💗',
+  hero_note_text  text default '¿Cómo comprar? El precio Detal es por unidad, sin monto mínimo. El precio Mayor se activa al acumular $50 o más en tu pedido - no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 💗',
   footer_description text default 'Productos colombianos de buena calidad, a un buen precio. ¡Llegaste al lugar indicado!',
   footer_bottom_text text default 'Catálogo generado a partir del PDF original de Shopicol Bacano · Gracias por preferirnos ✦',
   contact_title   text default '✦ Contáctanos ✦',
@@ -251,7 +242,7 @@ insert into site_settings (id) values (1) on conflict (id) do nothing;
 -- Si la tabla ya existía de una instalación anterior, agrega las columnas nuevas
 alter table site_settings add column if not exists meta_description text default 'Catálogo Shopicol Bacano: maquillaje, capilares y cuidado personal colombiano al por mayor y detal.';
 alter table site_settings add column if not exists eyebrow_text text default '✦ Catálogo completo · edición web ✦';
-alter table site_settings add column if not exists hero_note_text text default '¿Cómo comprar? El precio Detal es por unidad, sin monto mínimo. El precio Mayor se activa al acumular $50 o más en tu pedido — no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 💗';
+alter table site_settings add column if not exists hero_note_text text default '¿Cómo comprar? El precio Detal es por unidad, sin monto mínimo. El precio Mayor se activa al acumular $50 o más en tu pedido - no es por cantidad de piezas, sino por el monto total. ¡Gracias por preferirnos! 💗';
 alter table site_settings add column if not exists footer_description text default 'Productos colombianos de buena calidad, a un buen precio. ¡Llegaste al lugar indicado!';
 alter table site_settings add column if not exists footer_bottom_text text default 'Catálogo generado a partir del PDF original de Shopicol Bacano · Gracias por preferirnos ✦';
 alter table site_settings add column if not exists contact_title text default '✦ Contáctanos ✦';
@@ -278,11 +269,9 @@ create policy "Equipo puede insertar ajustes"
   to authenticated
   with check (true);
 
--- =====================================================================
 -- Fin del esquema. Después de correr esto:
 --   1. Ve a "Authentication" → "Users" → "Add user" para crear el
 --      acceso de cada persona de tu equipo (correo + contraseña).
 --   2. Ve a "Table Editor" y confirma que la tabla "products" existe.
 --   3. Vuelve al panel de administración e importa el catálogo inicial
 --      con el botón "Importar catálogo inicial" (una sola vez).
--- =====================================================================
