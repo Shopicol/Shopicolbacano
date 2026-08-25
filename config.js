@@ -15,3 +15,4 @@ const EMAILJS_CONFIG = {
   templateId: "template_w1znlnr",
   notifyEmail: "shopicolbacano@gmail.com",
 };
+const GA_MEASUREMENT_ID = "G-TK527K14H3";
