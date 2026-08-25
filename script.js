@@ -36,7 +36,6 @@
     query: "",
     category: "Todas",
     brand: "",
-    onlyAvailable: false,
     sort: "relevance",
     priceMode: "detal", // "detal" | "mayor"
   };
@@ -58,7 +57,6 @@
     clearSearch: document.getElementById("clearSearch"),
     categoryPills: document.getElementById("categoryPills"),
     brandSelect: document.getElementById("brandSelect"),
-    onlyAvailable: document.getElementById("onlyAvailable"),
     sortSelect: document.getElementById("sortSelect"),
     resultsCount: document.getElementById("resultsCount"),
     productGrid: document.getElementById("productGrid"),
@@ -268,9 +266,9 @@
     const q = normalize(state.query);
 
     let list = PRODUCTS.filter(p => {
+      if (!isEffectivelyAvailable(p)) return false; // los agotados nunca se muestran al público
       if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
-      if (state.onlyAvailable && !isEffectivelyAvailable(p)) return false;
 
       if (q) {
         const haystack = normalize(`${p.name} ${p.brand} ${p.category} ${p.ref}`);
@@ -290,14 +288,8 @@
         list = list.slice().sort((a, b) => a.name.localeCompare(b.name, "es"));
         break;
       default:
-        // "relevance": mantiene el orden original del catálogo,
-        // pero sube los disponibles primero si no se filtró ya por eso
-        if (!state.onlyAvailable) {
-          list = list.slice().sort((a, b) => {
-            const av = isEffectivelyAvailable(a), bv = isEffectivelyAvailable(b);
-            return bv === av ? 0 : bv ? 1 : -1;
-          });
-        }
+        // "relevance": mantiene el orden original del catálogo (ya vienen
+        // todos disponibles, así que no hace falta reordenar por eso)
     }
 
     return list;
@@ -568,11 +560,6 @@
     render();
   });
 
-  el.onlyAvailable.addEventListener("change", () => {
-    state.onlyAvailable = el.onlyAvailable.checked;
-    render();
-  });
-
   el.sortSelect.addEventListener("change", () => {
     state.sort = el.sortSelect.value;
     render();
@@ -582,12 +569,10 @@
     state.query = "";
     state.category = "Todas";
     state.brand = "";
-    state.onlyAvailable = false;
     state.sort = "relevance";
     el.searchInput.value = "";
     el.clearSearch.hidden = true;
     el.brandSelect.value = "";
-    el.onlyAvailable.checked = false;
     el.sortSelect.value = "relevance";
     document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
     document.querySelector('.pill[data-cat="Todas"]')?.classList.add("active");
@@ -1019,7 +1004,7 @@
      9.8 Destacados y en oferta (carrusel horizontal)
      --------------------------------------------------------------- */
   function renderFeatured() {
-    const featured = PRODUCTS.filter(p => p.featured || p.offer);
+    const featured = PRODUCTS.filter(p => isEffectivelyAvailable(p) && (p.featured || p.offer));
     if (!featured.length) {
       el.featuredSection.hidden = true;
       return;
