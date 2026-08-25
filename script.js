@@ -12,6 +12,24 @@
   "use strict";
 
   /* ---------------------------------------------------------------
+     0. Estadísticas de visitas (Google Analytics) — opcional
+     --------------------------------------------------------------- */
+  function trackEvent(name, params) {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", name, params || {});
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     0.6 Disponibilidad efectiva (considera el stock, si está definido)
+     --------------------------------------------------------------- */
+  function isEffectivelyAvailable(p) {
+    if (!p.avail) return false;
+    if (p.stock !== null && p.stock !== undefined && p.stock !== "" && Number(p.stock) <= 0) return false;
+    return true;
+  }
+
+  /* ---------------------------------------------------------------
      0. Estado global de la app
      --------------------------------------------------------------- */
   const state = {
@@ -81,6 +99,7 @@
     modalDetal: document.getElementById("modalDetal"),
     modalMayor: document.getElementById("modalMayor"),
     modalOffer: document.getElementById("modalOffer"),
+    modalStockNote: document.getElementById("modalStockNote"),
     modalCategory: document.getElementById("modalCategory"),
     modalQtyMinus: document.getElementById("modalQtyMinus"),
     modalQtyPlus: document.getElementById("modalQtyPlus"),
@@ -115,6 +134,7 @@
     custName: document.getElementById("custName"),
     custPhone: document.getElementById("custPhone"),
     custCity: document.getElementById("custCity"),
+    custEmail: document.getElementById("custEmail"),
     custPayment: document.getElementById("custPayment"),
     custDelivery: document.getElementById("custDelivery"),
     custAddress: document.getElementById("custAddress"),
@@ -200,11 +220,46 @@
         state.category = cat;
         document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
         btn.classList.add("active");
+        setCategoryInURL(cat);
+        trackEvent("view_category", { category: cat });
         render();
       });
       el.categoryPills.appendChild(btn);
     });
   }
+
+  // Lee la categoría desde la URL (ej. ?categoria=Ojos) al cargar la página,
+  // así los links compartidos abren directo en esa categoría.
+  function getCategoryFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("categoria");
+  }
+
+  // Actualiza la URL (sin recargar la página) cuando cambia la categoría,
+  // para que el link se pueda copiar y compartir tal cual.
+  function setCategoryInURL(cat) {
+    const params = new URLSearchParams(window.location.search);
+    if (!cat || cat === "Todas") {
+      params.delete("categoria");
+    } else {
+      params.set("categoria", cat);
+    }
+    const query = params.toString();
+    const newUrl = window.location.pathname + (query ? "?" + query : "");
+    window.history.pushState({ categoria: cat }, "", newUrl);
+  }
+
+  // Si el usuario usa los botones atrás/adelante del navegador, respeta
+  // la categoría que corresponda a esa URL.
+  window.addEventListener("popstate", () => {
+    const fromUrl = getCategoryFromURL();
+    const validCats = new Set(PRODUCTS.map(p => p.category));
+    state.category = (fromUrl && validCats.has(fromUrl)) ? fromUrl : "Todas";
+    document.querySelectorAll(".pill").forEach(p => {
+      p.classList.toggle("active", p.dataset.cat === state.category);
+    });
+    render();
+  });
 
   /* ---------------------------------------------------------------
      4. Filtrado + orden
@@ -215,7 +270,7 @@
     let list = PRODUCTS.filter(p => {
       if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
-      if (state.onlyAvailable && !p.avail) return false;
+      if (state.onlyAvailable && !isEffectivelyAvailable(p)) return false;
 
       if (q) {
         const haystack = normalize(`${p.name} ${p.brand} ${p.category} ${p.ref}`);
@@ -238,7 +293,10 @@
         // "relevance": mantiene el orden original del catálogo,
         // pero sube los disponibles primero si no se filtró ya por eso
         if (!state.onlyAvailable) {
-          list = list.slice().sort((a, b) => (b.avail === a.avail ? 0 : b.avail ? 1 : -1));
+          list = list.slice().sort((a, b) => {
+            const av = isEffectivelyAvailable(a), bv = isEffectivelyAvailable(b);
+            return bv === av ? 0 : bv ? 1 : -1;
+          });
         }
     }
 
@@ -250,20 +308,25 @@
      --------------------------------------------------------------- */
   function cardTemplate(p, index) {
     const priceModeLabel = state.priceMode;
-    const unavailableClass = p.avail ? "" : " is-unavailable";
+    const avail = isEffectivelyAvailable(p);
+    const unavailableClass = avail ? "" : " is-unavailable";
     const badge = p.offer
       ? `<span class="card-badge">Antes ${money(p[priceModeLabel])}</span>`
       : "";
-    const stamp = !p.avail
+    const stamp = !avail
       ? `<span class="stamp-agotado">Agotado</span>`
       : "";
-    const quickAdd = (p.avail && !(p.tones || "").trim())
+    const lowStock = (avail && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number(p.stock) > 0 && Number(p.stock) <= 5)
+      ? `<span class="card-lowstock">¡Solo quedan ${p.stock}!</span>`
+      : "";
+    const quickAdd = (avail && !(p.tones || "").trim())
       ? `<button class="card-quickadd" data-quickadd="${p.id}" aria-label="Agregar ${p.name} al carrito" title="Agregar al carrito">+</button>`
       : "";
 
     return `
       <article class="card${unavailableClass}" style="--delay:${Math.min(index * 0.03, 0.5)}s" data-id="${p.id}" tabindex="0" role="button" aria-label="Ver detalle de ${p.name}">
         <div class="card-img-wrap">
+          ${lowStock}
           <img src="${p.image}" alt="${p.name}" loading="lazy" width="300" height="300">
           ${badge}
           ${stamp}
@@ -382,8 +445,10 @@
   });
 
   function showModal(p) {
+    trackEvent("view_item", { item_name: p.name, item_brand: p.brand, item_category: p.category });
+    const avail = isEffectivelyAvailable(p);
     el.modalImg.alt = p.name;
-    el.modalStamp.hidden = p.avail;
+    el.modalStamp.hidden = avail;
     el.modalBrand.textContent = p.brand;
     el.modalTitle.textContent = p.name;
     el.modalRef.textContent = p.ref ? `Referencia: ${p.ref}` : "Referencia no especificada";
@@ -396,6 +461,14 @@
       el.modalOffer.textContent = `🔥 Precio especial ahora: ${money(p.offer)}`;
     } else {
       el.modalOffer.hidden = true;
+    }
+
+    // Aviso de pocas unidades (si el stock está definido y es bajo)
+    if (avail && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number(p.stock) > 0 && Number(p.stock) <= 5) {
+      el.modalStockNote.hidden = false;
+      el.modalStockNote.textContent = `⚠️ ¡Solo quedan ${p.stock} unidades!`;
+    } else {
+      el.modalStockNote.hidden = true;
     }
 
     // Galería: imagen principal + fotos adicionales (si las hay)
@@ -432,8 +505,8 @@
     currentModalProduct = p;
     modalQtyValue = 1;
     el.modalQty.textContent = modalQtyValue;
-    el.modalAddCart.disabled = !p.avail;
-    el.modalAddCart.textContent = p.avail ? "Agregar al carrito" : "Agotado";
+    el.modalAddCart.disabled = !avail;
+    el.modalAddCart.textContent = avail ? "Agregar al carrito" : "Agotado";
 
     el.modalOverlay.hidden = false;
     document.body.style.overflow = "hidden";
@@ -461,7 +534,7 @@
     el.modalQty.textContent = modalQtyValue;
   });
   el.modalAddCart.addEventListener("click", () => {
-    if (!currentModalProduct || !currentModalProduct.avail) return;
+    if (!currentModalProduct || !isEffectivelyAvailable(currentModalProduct)) return;
     addToCart(currentModalProduct.id, modalQtyValue, selectedTone);
     el.modalAddCart.textContent = "¡Agregado! ✓";
     el.modalAddCart.classList.add("added");
@@ -547,7 +620,7 @@
   function paintStats() {
     const total = PRODUCTS.length;
     const brands = new Set(PRODUCTS.map(p => p.brand)).size;
-    const inStock = PRODUCTS.filter(p => p.avail).length;
+    const inStock = PRODUCTS.filter(p => isEffectivelyAvailable(p)).length;
 
     animateCount(el.statTotal, total);
     animateCount(el.statBrands, brands);
@@ -606,6 +679,8 @@
     cart[key] = (cart[key] || 0) + qty;
     saveCart();
     renderCartBadge();
+    const product = PRODUCTS.find(p => String(p.id) === String(id));
+    if (product) trackEvent("add_to_cart", { item_name: product.name, item_brand: product.brand, quantity: qty, tone: tone || "" });
   }
   function setCartQty(id, qty) {
     id = String(id);
@@ -787,6 +862,7 @@
     const order = {
       customer_name: el.custName.value.trim(),
       phone: el.custPhone.value.trim(),
+      email: el.custEmail.value.trim(),
       city: el.custCity.value.trim(),
       payment_method: el.custPayment.value,
       delivery_method: el.custDelivery.value,
@@ -840,6 +916,7 @@
     }
 
     // Vacía el carrito y muestra la confirmación
+    trackEvent("generate_lead", { value: order.total, currency: "USD", payment_method: order.payment_method });
     cart = {};
     saveCart();
     renderCartBadge();
@@ -1071,6 +1148,13 @@
     const [products, settings] = await Promise.all([fetchCatalog(), fetchSettings()]);
     PRODUCTS = products;
     applySettings(settings);
+
+    // Si el link trae ?categoria=Ojos (por ejemplo), abre directo ahí
+    const urlCat = getCategoryFromURL();
+    if (urlCat) {
+      const validCats = new Set(PRODUCTS.map(p => p.category));
+      if (validCats.has(urlCat)) state.category = urlCat;
+    }
 
     buildBrandOptions();
     buildCategoryPills();

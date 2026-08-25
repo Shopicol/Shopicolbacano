@@ -183,6 +183,7 @@
         </div>
       </div>
       <p class="modal-offer" id="modalOffer" hidden></p>
+      <p class="modal-stock-note" id="modalStockNote" hidden></p>
       <p class="modal-category" id="modalCategory"></p>
 
       <div class="modal-tones" id="modalTones" hidden>
@@ -256,6 +257,11 @@
           <input type="text" id="custCity" required placeholder="Ej: Caracas">
         </label>
       </div>
+
+      <label>
+        <span>Correo (opcional)</span>
+        <input type="email" id="custEmail" placeholder="Ej: maria@ejemplo.com">
+      </label>
 
       <label>
         <span>Método de pago *</span>
@@ -340,6 +346,24 @@
 <script src="products.js"></script>
 <script src="config.js"></script>
 <script src="supabase-client.js"></script>
+
+<!-- Google Analytics (opcional): solo se activa si GA_MEASUREMENT_ID
+     tiene un ID real en config.js. Se carga de forma condicional para
+     no hacer peticiones innecesarias si no está configurado. -->
+<script>
+  if (typeof GA_MEASUREMENT_ID !== "undefined" && GA_MEASUREMENT_ID && !GA_MEASUREMENT_ID.includes("PEGA_AQUI")) {
+    var gaScript = document.createElement("script");
+    gaScript.async = true;
+    gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_MEASUREMENT_ID;
+    document.head.appendChild(gaScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", GA_MEASUREMENT_ID);
+  }
+</script>
+
 <script src="script.js"></script>
 </body>
 </html>
