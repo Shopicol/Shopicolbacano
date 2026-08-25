@@ -200,6 +200,10 @@ img[hidden]{ display:none; }
 }
 .status-chip.avail{ background:#e4f5e9; color:#227a45; }
 .status-chip.unavail{ background:var(--danger-soft); color:var(--danger); }
+.stock-cell{ text-align:center; font-weight:600; }
+.stock-unlimited{ color:var(--ink-soft); font-weight:400; }
+.stock-low{ color:var(--danger); background:var(--danger-soft); padding:2px 8px; border-radius:999px; font-size:12px; }
+small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; font-weight:400; }
 
 .admin-empty{ text-align:center; padding:50px 20px; color:var(--ink-soft); }
 

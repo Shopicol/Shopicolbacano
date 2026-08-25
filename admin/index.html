@@ -75,6 +75,7 @@
       <button class="admin-tab" data-tab="orders">🧾 Pedidos <span class="tab-badge" id="ordersBadge" hidden>0</span></button>
       <button class="admin-tab" data-tab="banners">🖼 Banners</button>
       <button class="admin-tab" data-tab="settings">🎨 Ajustes</button>
+      <button class="admin-tab" data-tab="customers">👥 Clientes</button>
     </nav>
 
     <!-- ============ TAB: PRODUCTOS ============ -->
@@ -137,6 +138,7 @@
             <th>Categoría</th>
             <th>Detal</th>
             <th>Mayor</th>
+            <th>Stock</th>
             <th>Estado</th>
             <th class="col-actions"></th>
           </tr>
@@ -358,6 +360,40 @@
       </section>
     </div><!-- /tabSettings -->
 
+    <!-- ============ TAB: CLIENTES ============ -->
+    <div class="admin-tab-panel" id="tabCustomers" hidden>
+      <section class="admin-toolbar">
+        <div class="admin-stats">
+          <div class="mini-stat"><strong id="statCustomersTotal">0</strong><span>clientes</span></div>
+          <div class="mini-stat"><strong id="statCustomersOrders">0</strong><span>pedidos totales</span></div>
+          <div class="mini-stat"><strong id="statCustomersSpent">$0</strong><span>total comprado</span></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn-primary" id="exportCustomersBtn">⬇ Exportar CSV (para ads)</button>
+        </div>
+      </section>
+
+      <p class="banners-hint">Cada cliente aparece una sola vez, con su historial acumulado — útil para armar audiencias en Meta/Facebook Ads o Google Ads con el CSV.</p>
+
+      <section class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Ciudad</th>
+              <th>Pedidos</th>
+              <th>Total comprado</th>
+              <th>Último pedido</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody"><!-- filas por JS --></tbody>
+        </table>
+        <p class="admin-empty" id="customersEmpty" hidden>Todavía no hay clientes con pedidos registrados.</p>
+      </section>
+    </div><!-- /tabCustomers -->
+
   </main>
 </div>
 
@@ -419,6 +455,14 @@
         <label>
           <span>Precio especial "Ahora" (opcional)</span>
           <input type="number" id="fieldOffer" step="0.01" min="0" placeholder="Déjalo vacío si no aplica">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <span>Stock disponible (opcional)</span>
+          <input type="number" id="fieldStock" step="1" min="0" placeholder="Déjalo vacío si no controlas stock de este producto">
+          <small>Si lo llenas y llega a 0, el producto se marca "Agotado" automáticamente.</small>
         </label>
       </div>
 

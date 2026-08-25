@@ -56,6 +56,7 @@
     fieldDetal: document.getElementById("fieldDetal"),
     fieldMayor: document.getElementById("fieldMayor"),
     fieldOffer: document.getElementById("fieldOffer"),
+    fieldStock: document.getElementById("fieldStock"),
     fieldImageFile: document.getElementById("fieldImageFile"),
     fieldImageUrl: document.getElementById("fieldImageUrl"),
     imagePreview: document.getElementById("imagePreview"),
@@ -121,6 +122,13 @@
 
     // ajustes
     tabSettings: document.getElementById("tabSettings"),
+    tabCustomers: document.getElementById("tabCustomers"),
+    statCustomersTotal: document.getElementById("statCustomersTotal"),
+    statCustomersOrders: document.getElementById("statCustomersOrders"),
+    statCustomersSpent: document.getElementById("statCustomersSpent"),
+    exportCustomersBtn: document.getElementById("exportCustomersBtn"),
+    customersTableBody: document.getElementById("customersTableBody"),
+    customersEmpty: document.getElementById("customersEmpty"),
     settingsLogoPreview: document.getElementById("settingsLogoPreview"),
     settingsLogoFile: document.getElementById("settingsLogoFile"),
     settingsLogoUrl: document.getElementById("settingsLogoUrl"),
@@ -317,7 +325,7 @@
   /* ---------------------------------------------------------------
      Pestañas (Productos / Pedidos / Banners)
      --------------------------------------------------------------- */
-  const tabPanels = { products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, settings: el.tabSettings };
+  const tabPanels = { products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, settings: el.tabSettings, customers: el.tabCustomers };
   el.tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       el.tabButtons.forEach(b => b.classList.remove("active"));
@@ -413,6 +421,7 @@
         <td>${p.category}</td>
         <td>${money(p.detal)}</td>
         <td>${money(p.mayor)}</td>
+        <td class="stock-cell">${p.stock === null || p.stock === undefined ? "<span class=\"stock-unlimited\">—</span>" : (Number(p.stock) <= 5 ? `<span class="stock-low">${p.stock}</span>` : p.stock)}</td>
         <td>
           <button class="status-chip ${p.avail ? "avail" : "unavail"}" data-toggle-avail="${p.id}">
             ${p.avail ? "Disponible" : "Agotado"}
@@ -497,6 +506,7 @@
     allOrders = data || [];
     paintOrderStats();
     renderOrders();
+    renderCustomers();
   }
 
   function paintOrderStats() {
@@ -669,6 +679,96 @@
 
   window.addEventListener("afterprint", () => {
     document.body.classList.remove("printing-receipt");
+  });
+
+  /* ---------------------------------------------------------------
+     CLIENTES: agrupa los pedidos por teléfono (cada cliente una sola
+     vez, con su historial acumulado) — útil para armar audiencias de
+     anuncios (Meta/Facebook Ads, Google Ads) con el botón de exportar.
+     --------------------------------------------------------------- */
+  function buildCustomersList() {
+    const map = new Map(); // clave: teléfono normalizado
+    allOrders.forEach(o => {
+      const key = (o.phone || "").replace(/\D/g, "") || o.customer_name;
+      if (!map.has(key)) {
+        map.set(key, {
+          name: o.customer_name, phone: o.phone, email: o.email || "",
+          city: o.city, orderCount: 0, totalSpent: 0, lastOrderDate: o.created_at,
+        });
+      }
+      const c = map.get(key);
+      c.orderCount += 1;
+      c.totalSpent += Number(o.total) || 0;
+      if (!c.email && o.email) c.email = o.email;
+      if (new Date(o.created_at) > new Date(c.lastOrderDate)) {
+        c.lastOrderDate = o.created_at;
+        c.name = o.customer_name; // se queda con el nombre/ciudad más reciente
+        c.city = o.city;
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => new Date(b.lastOrderDate) - new Date(a.lastOrderDate));
+  }
+
+  function renderCustomers() {
+    const customers = buildCustomersList();
+
+    el.statCustomersTotal.textContent = customers.length;
+    el.statCustomersOrders.textContent = allOrders.length;
+    el.statCustomersSpent.textContent = money(customers.reduce((s, c) => s + c.totalSpent, 0));
+
+    if (!customers.length) {
+      el.customersTableBody.innerHTML = "";
+      el.customersEmpty.hidden = false;
+      return;
+    }
+    el.customersEmpty.hidden = true;
+
+    el.customersTableBody.innerHTML = customers.map(c => {
+      const lastDate = c.lastOrderDate ? new Date(c.lastOrderDate).toLocaleDateString("es-VE", { dateStyle: "medium" }) : "—";
+      return `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.phone}</td>
+          <td>${c.email || "—"}</td>
+          <td>${c.city}</td>
+          <td>${c.orderCount}</td>
+          <td>${money(c.totalSpent)}</td>
+          <td>${lastDate}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  el.exportCustomersBtn.addEventListener("click", () => {
+    const customers = buildCustomersList();
+    if (!customers.length) { showToast("No hay clientes para exportar todavía", true); return; }
+
+    const headers = ["Nombre", "Telefono", "Correo", "Ciudad", "Pedidos", "Total_Comprado", "Ultimo_Pedido"];
+    const csvRows = [headers.join(",")];
+    customers.forEach(c => {
+      const row = [
+        `"${(c.name || "").replace(/"/g, '""')}"`,
+        `"${c.phone || ""}"`,
+        `"${c.email || ""}"`,
+        `"${(c.city || "").replace(/"/g, '""')}"`,
+        c.orderCount,
+        c.totalSpent.toFixed(2),
+        c.lastOrderDate ? new Date(c.lastOrderDate).toISOString().slice(0, 10) : "",
+      ];
+      csvRows.push(row.join(","));
+    });
+    const csvContent = "\uFEFF" + csvRows.join("\r\n"); // BOM para que Excel abra bien los acentos
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clientes-shopicol-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Exportados ${customers.length} clientes`);
   });
 
   /* ---------------------------------------------------------------
@@ -869,6 +969,7 @@
       el.fieldDetal.value = product.detal ?? "";
       el.fieldMayor.value = product.mayor ?? "";
       el.fieldOffer.value = product.offer ?? "";
+      el.fieldStock.value = product.stock ?? "";
       el.fieldNote.value = product.note || "";
       el.fieldFeatured.checked = Boolean(product.featured);
       el.fieldTones.value = product.tones || "";
@@ -895,6 +996,7 @@
       el.productForm.reset();
       el.fieldId.value = "";
       el.fieldAvail.value = "true";
+      el.fieldStock.value = "";
       el.imagePreview.hidden = true;
       el.deleteProductBtn.hidden = true;
       galleryRows = [];
@@ -972,15 +1074,22 @@
       const imageUrl = await uploadImageIfNeeded();
       const galleryImages = await buildGalleryImagesArray();
 
+      const stockValue = el.fieldStock.value.trim() === "" ? null : parseInt(el.fieldStock.value, 10);
+      let effectiveAvail = el.fieldAvail.value === "true";
+      if (stockValue !== null && stockValue <= 0) {
+        effectiveAvail = false; // stock en 0 (o menos) => se marca Agotado automáticamente
+      }
+
       const payload = {
         name: el.fieldName.value.trim(),
         brand: el.fieldBrand.value.trim(),
         category: el.fieldCategory.value.trim(),
         ref: el.fieldRef.value.trim(),
-        avail: el.fieldAvail.value === "true",
+        avail: effectiveAvail,
         detal: parseFloat(el.fieldDetal.value) || 0,
         mayor: parseFloat(el.fieldMayor.value) || 0,
         offer: el.fieldOffer.value ? parseFloat(el.fieldOffer.value) : null,
+        stock: stockValue,
         image: imageUrl || "",
         gallery_images: galleryImages,
         tones: el.fieldTones.value.trim(),
