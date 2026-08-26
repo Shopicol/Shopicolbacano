@@ -114,6 +114,12 @@ const FONT_PAIRS = {
     body: '"DM Sans", system-ui, sans-serif',
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap",
   },
+  boutique: {
+    label: "Elegante boutique (Italiana + Montserrat)",
+    display: '"Italiana", serif',
+    body: '"Montserrat", system-ui, sans-serif',
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Italiana&family=Montserrat:wght@400;500;600;700;800&display=swap",
+  },
 };
 
 async function fetchSettings() {
