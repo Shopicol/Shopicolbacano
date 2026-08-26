@@ -231,8 +231,17 @@
     return params.get("categoria");
   }
 
-  // Actualiza la URL (sin recargar la página) cuando cambia la categoría,
-  // para que el link se pueda copiar y compartir tal cual.
+  // Lee el término de búsqueda desde la URL (ej. ?buscar=ojos+grises),
+  // así los links compartidos (o el buscador de la página de producto)
+  // abren directo con esa búsqueda ya aplicada.
+  function getSearchFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("buscar");
+  }
+
+  // Actualiza la URL (sin recargar la página) cuando cambia la categoría
+  // o el término de búsqueda, para que el link se pueda copiar y compartir
+  // tal cual — igual que hacen la mayoría de tiendas online.
   function setCategoryInURL(cat) {
     const params = new URLSearchParams(window.location.search);
     if (!cat || cat === "Todas") {
@@ -245,15 +254,33 @@
     window.history.pushState({ categoria: cat }, "", newUrl);
   }
 
+  function setSearchInURL(q) {
+    const params = new URLSearchParams(window.location.search);
+    if (!q) {
+      params.delete("buscar");
+    } else {
+      params.set("buscar", q);
+    }
+    const query = params.toString();
+    const newUrl = window.location.pathname + (query ? "?" + query : "");
+    window.history.replaceState({ buscar: q }, "", newUrl);
+  }
+
   // Si el usuario usa los botones atrás/adelante del navegador, respeta
-  // la categoría que corresponda a esa URL.
+  // la categoría y la búsqueda que correspondan a esa URL.
   window.addEventListener("popstate", () => {
-    const fromUrl = getCategoryFromURL();
+    const fromUrlCat = getCategoryFromURL();
     const validCats = new Set(PRODUCTS.map(p => p.category));
-    state.category = (fromUrl && validCats.has(fromUrl)) ? fromUrl : "Todas";
+    state.category = (fromUrlCat && validCats.has(fromUrlCat)) ? fromUrlCat : "Todas";
     document.querySelectorAll(".pill").forEach(p => {
       p.classList.toggle("active", p.dataset.cat === state.category);
     });
+
+    const fromUrlSearch = getSearchFromURL() || "";
+    state.query = fromUrlSearch;
+    el.searchInput.value = fromUrlSearch;
+    el.clearSearch.hidden = fromUrlSearch.length === 0;
+
     render();
   });
 
@@ -538,6 +565,7 @@
   const debouncedSearch = debounce(() => {
     state.query = el.searchInput.value.trim();
     el.clearSearch.hidden = state.query.length === 0;
+    setSearchInURL(state.query);
     render();
   }, 180);
 
@@ -547,6 +575,7 @@
     el.searchInput.value = "";
     state.query = "";
     el.clearSearch.hidden = true;
+    setSearchInURL("");
     render();
     el.searchInput.focus();
   });
@@ -1153,6 +1182,15 @@
     if (urlCat) {
       const validCats = new Set(PRODUCTS.map(p => p.category));
       if (validCats.has(urlCat)) state.category = urlCat;
+    }
+
+    // Si el link trae ?buscar=ojos+grises (ej. viniendo del buscador de
+    // la página de un producto), precarga esa búsqueda ya escrita.
+    const urlSearch = getSearchFromURL();
+    if (urlSearch) {
+      state.query = urlSearch;
+      el.searchInput.value = urlSearch;
+      el.clearSearch.hidden = false;
     }
 
     buildBrandOptions();
