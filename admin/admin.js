@@ -1369,11 +1369,24 @@
     });
   }
 
+  // Normaliza las claves del objeto de una fila del Excel: quita asteriscos
+  // de "obligatorio" (ej. "Nombre *" → "Nombre") y espacios extra, para que
+  // no importe si el encabezado trae el asterisco o no.
+  function normalizeRowKeys(row) {
+    const normalized = {};
+    Object.keys(row).forEach(key => {
+      const cleanKey = key.replace(/\*/g, "").trim();
+      normalized[cleanKey] = row[key];
+    });
+    return normalized;
+  }
+
   function validateBulkRows(rawRows) {
     const valid = [];
     const errors = [];
 
-    rawRows.forEach((row, idx) => {
+    rawRows.forEach((rawRow, idx) => {
+      const row = normalizeRowKeys(rawRow);
       const lineNum = idx + 2; // +2 porque la fila 1 es el encabezado
       const name = String(row["Nombre"] || "").trim();
       const brand = String(row["Marca"] || "").trim();
@@ -1397,6 +1410,12 @@
       const stockRaw = row["Stock"];
       const tonesRaw = String(row["Tonos"] || "").trim();
 
+      // Si Imagen_URL trae varias fotos separadas por coma, la primera es
+      // la foto principal y el resto se guardan como galería adicional.
+      const imageUrls = String(row["Imagen_URL"] || "").split(",").map(s => s.trim()).filter(Boolean);
+      const mainImage = imageUrls[0] || "";
+      const extraImages = imageUrls.slice(1);
+
       valid.push({
         name, brand, category,
         ref: String(row["Referencia"] || "").trim(),
@@ -1406,9 +1425,9 @@
         avail: row["Disponible"] === "" ? true : parseBoolField(row["Disponible"]),
         featured: parseBoolField(row["Destacado"]),
         tones: tonesRaw,
-        image: String(row["Imagen_URL"] || "").trim(),
+        image: mainImage,
         note: String(row["Notas"] || "").trim(),
-        gallery_images: [],
+        gallery_images: extraImages,
       });
     });
 
