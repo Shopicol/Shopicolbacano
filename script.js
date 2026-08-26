@@ -346,16 +346,14 @@
   // el carrusel de destacados.
   function attachCardListeners(container) {
     container.querySelectorAll(".card").forEach(card => {
-      const openModal = () => {
-        const id = Number(card.dataset.id);
-        const product = PRODUCTS.find(p => p.id === id);
-        if (product) showModal(product);
+      const goToProduct = () => {
+        window.location.href = `producto.html?id=${card.dataset.id}`;
       };
-      card.addEventListener("click", openModal);
+      card.addEventListener("click", goToProduct);
       card.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          openModal();
+          goToProduct();
         }
       });
     });
