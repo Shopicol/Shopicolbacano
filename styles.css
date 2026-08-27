@@ -248,6 +248,53 @@ button, select, input{ font-family:inherit; }
   display:flex; align-items:center; justify-content:center;
 }
 
+/* ---- Sugerencias del buscador (autocompletado) ---- */
+.search-suggestions{
+  position:absolute; top:calc(100% + 8px); left:0; right:0;
+  background:var(--paper); border:1.5px solid var(--line);
+  border-radius:16px; box-shadow:var(--shadow-lg);
+  padding:6px; z-index:60;
+  max-height:420px; overflow-y:auto;
+}
+.search-suggestions:empty{ display:none; }
+.suggestion-item{
+  display:flex; align-items:center; gap:10px;
+  padding:8px; border-radius:12px; cursor:pointer;
+  text-decoration:none; color:var(--ink);
+}
+.suggestion-item:hover, .suggestion-item.active{
+  background:var(--pink-pale);
+}
+.suggestion-item img{
+  width:38px; height:38px; border-radius:8px; object-fit:cover;
+  background:var(--cream-deep); flex-shrink:0;
+}
+.suggestion-item .sugg-body{ min-width:0; flex:1; }
+.suggestion-item .sugg-name{
+  font-size:13.5px; font-weight:600; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.suggestion-item .sugg-meta{
+  font-size:11.5px; color:var(--ink-soft);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.suggestion-item .sugg-price{
+  font-size:13px; font-weight:700; color:var(--pink-dark); flex-shrink:0;
+}
+.suggestion-empty{
+  padding:14px 10px; font-size:13px; color:var(--ink-soft); text-align:center;
+}
+.suggestion-viewall{
+  display:block; text-align:center; padding:9px; margin-top:2px;
+  font-size:12.5px; font-weight:700; color:var(--pink-dark);
+  border-top:1px solid var(--line); cursor:pointer;
+}
+.suggestion-viewall:hover{ background:var(--pink-pale); border-radius:0 0 10px 10px; }
+
+@media (max-width:640px){
+  .search-suggestions{ position:fixed; top:64px; left:10px; right:10px; max-height:60vh; }
+}
+
 .mode-toggle{
   flex-shrink:0;
   display:flex; align-items:center; gap:8px;
@@ -550,6 +597,10 @@ button, select, input{ font-family:inherit; }
   border-radius:999px;
   letter-spacing:.02em;
   box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+.card-badge-new{
+  background:var(--gold-dark);
 }
 
 .card-lowstock{
