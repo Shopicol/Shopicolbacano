@@ -976,6 +976,16 @@
       } catch (err) {
         console.warn("No se pudo guardar el pedido en Supabase:", err);
       }
+      // Guarda una versión anónima y pública (solo nombre + inicial y un
+      // producto) para las ventanitas de "alguien acaba de comprar".
+      try {
+        await supabaseClient.from("purchase_feed").insert({
+          display_name: anonymizeName(order.customer_name),
+          product_name: items[Math.floor(Math.random() * items.length)].name,
+        });
+      } catch (err) {
+        console.warn("No se pudo registrar la compra en purchase_feed:", err);
+      }
     }
 
     // Envía una notificación por correo (si EmailJS está configurado)
@@ -1106,6 +1116,147 @@
   }
   el.bannerPrev.addEventListener("click", () => { goToBanner(bannerIndex - 1); startBannerAutoplay(); });
   el.bannerNext.addEventListener("click", () => { goToBanner(bannerIndex + 1); startBannerAutoplay(); });
+
+  /* ---------------------------------------------------------------
+     9.8 Ventanitas de "alguien acaba de comprar" (social proof)
+     --------------------------------------------------------------- */
+  const SOCIAL_PROOF_FIRST_NAMES = [
+    "Camila", "Valentina", "Andrea", "Sofía", "Daniela", "Laura", "Mariana",
+    "Isabella", "Juliana", "Carolina", "Alejandra", "Paula", "Gabriela",
+    "Valeria", "Natalia", "María José", "Fernanda", "Luisa", "Yolimar", "Génesis",
+  ];
+  const SOCIAL_PROOF_LAST_INITIALS = "ABCDEFGHIJLMNOPRSTVZ".split("");
+
+  // Convierte "Camila Cano Restrepo" -> "Camila C." (nunca muestra el
+  // apellido completo, solo la inicial, para no exponer datos del cliente).
+  function anonymizeName(fullName) {
+    const parts = (fullName || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return randomSimulatedName();
+    const first = parts[0];
+    const lastInitial = parts.length > 1 ? parts[1].charAt(0).toUpperCase() : "";
+    return lastInitial ? `${first} ${lastInitial}.` : first;
+  }
+
+  function randomSimulatedName() {
+    const first = SOCIAL_PROOF_FIRST_NAMES[Math.floor(Math.random() * SOCIAL_PROOF_FIRST_NAMES.length)];
+    const last = SOCIAL_PROOF_LAST_INITIALS[Math.floor(Math.random() * SOCIAL_PROOF_LAST_INITIALS.length)];
+    return `${first} ${last}.`;
+  }
+
+  function randomSimulatedProduct() {
+    const pool = PRODUCTS.length ? PRODUCTS : [];
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)].name;
+  }
+
+  function timeAgoEs(dateStr) {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "justo ahora";
+    if (mins < 60) return `hace ${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `hace ${hours} h`;
+    const days = Math.floor(hours / 24);
+    return `hace ${days} d`;
+  }
+
+  let socialProofQueue = [];
+  let socialProofIdx = 0;
+  let socialProofEl = null;
+  let socialProofHideTimer = null;
+  let socialProofNextTimer = null;
+
+  function buildSocialProofDOM() {
+    if (socialProofEl) return socialProofEl;
+    const wrap = document.createElement("div");
+    wrap.className = "social-proof-toast";
+    wrap.setAttribute("role", "status");
+    wrap.innerHTML = `
+      <button class="social-proof-close" aria-label="Cerrar">×</button>
+      <div class="social-proof-icon">🛍️</div>
+      <div class="social-proof-body">
+        <p class="social-proof-line1"></p>
+        <p class="social-proof-line2"></p>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+    wrap.querySelector(".social-proof-close").addEventListener("click", () => {
+      hideSocialProofToast();
+      clearTimeout(socialProofNextTimer);
+      try { sessionStorage.setItem("sb_hide_social_proof", "1"); } catch (e) {}
+    });
+    socialProofEl = wrap;
+    return wrap;
+  }
+
+  function showSocialProofToast(entry) {
+    const wrap = buildSocialProofDOM();
+    wrap.querySelector(".social-proof-line1").textContent = `${entry.name} compró`;
+    wrap.querySelector(".social-proof-line2").textContent = entry.product + (entry.when ? ` · ${entry.when}` : "");
+    wrap.classList.add("visible");
+    clearTimeout(socialProofHideTimer);
+    socialProofHideTimer = setTimeout(hideSocialProofToast, 5000);
+  }
+
+  function hideSocialProofToast() {
+    if (socialProofEl) socialProofEl.classList.remove("visible");
+  }
+
+  function scheduleNextSocialProof() {
+    const delay = 8000 + Math.random() * 2000; // 8-10s
+    socialProofNextTimer = setTimeout(() => {
+      hideSocialProofToast();
+      setTimeout(runNextSocialProof, 350);
+    }, delay);
+  }
+
+  function runNextSocialProof() {
+    if (!socialProofQueue.length) return;
+    const entry = socialProofQueue[socialProofIdx % socialProofQueue.length];
+    socialProofIdx++;
+    showSocialProofToast(entry);
+    scheduleNextSocialProof();
+  }
+
+  async function initSocialProof() {
+    try {
+      if (sessionStorage.getItem("sb_hide_social_proof") === "1") return;
+    } catch (e) {}
+
+    let real = [];
+    if (SUPABASE_READY) {
+      try {
+        const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+        const { data } = await supabaseClient
+          .from("purchase_feed")
+          .select("display_name, product_name, created_at")
+          .gte("created_at", since)
+          .order("created_at", { ascending: false })
+          .limit(15);
+        if (data && data.length) {
+          real = data.map(r => ({ name: r.display_name, product: r.product_name, when: timeAgoEs(r.created_at) }));
+        }
+      } catch (err) {
+        console.warn("No se pudo cargar purchase_feed:", err);
+      }
+    }
+
+    // Completa con compras simuladas (usando productos reales del catálogo)
+    // hasta tener un mínimo de entradas para que el ciclo no se sienta corto.
+    const simulated = [];
+    const minEntries = 8;
+    while (real.length + simulated.length < minEntries) {
+      const product = randomSimulatedProduct();
+      if (!product) break; // catálogo aún no cargado
+      simulated.push({ name: randomSimulatedName(), product, when: null });
+    }
+
+    socialProofQueue = [...real, ...simulated].sort(() => Math.random() - 0.5);
+    if (!socialProofQueue.length) return;
+
+    // Primer aviso con un pequeño retraso para no saludar apenas carga la página
+    socialProofNextTimer = setTimeout(runNextSocialProof, 6000);
+  }
 
   /* ---------------------------------------------------------------
      9.75 Recién llegado (4 productos más recientes: nuevos o editados)
@@ -1302,6 +1453,7 @@
     renderFeatured();
     render();
     loadBanners();
+    initSocialProof();
   }
 
   document.addEventListener("DOMContentLoaded", init);
