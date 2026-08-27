@@ -78,13 +78,12 @@ button, select, input{ font-family:inherit; }
 
 /* ============================= BANNER CAROUSEL ============================= */
 .banner-carousel{
-  position:relative; overflow:hidden;
+  position:relative; overflow:hidden; border-radius:20px;
   max-width:1280px; margin:20px auto 0; padding:0 20px;
 }
 .banner-carousel[hidden]{ display:none; }
 .banner-track{
   display:flex; transition:transform .45s cubic-bezier(.2,.8,.2,1);
-  border-radius:20px; overflow:hidden;
 }
 .banner-slide{
   flex:0 0 100%;
