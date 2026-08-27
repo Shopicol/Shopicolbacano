@@ -104,6 +104,7 @@
     modalGalleryNext: document.getElementById("modalGalleryNext"),
     modalThumbs: document.getElementById("modalThumbs"),
     modalTones: document.getElementById("modalTones"),
+    modalToneHint: document.getElementById("modalToneHint"),
     toneChips: document.getElementById("toneChips"),
 
     // carrito
@@ -513,9 +514,11 @@
     if (currentTones.length) {
       el.modalTones.hidden = false;
       renderToneChips();
+      el.modalToneHint.hidden = true;
     } else {
       el.modalTones.hidden = true;
       el.toneChips.innerHTML = "";
+      el.modalToneHint.hidden = false;
     }
 
     currentModalProduct = p;
