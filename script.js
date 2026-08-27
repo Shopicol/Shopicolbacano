@@ -54,6 +54,7 @@
      --------------------------------------------------------------- */
   const el = {
     searchInput: document.getElementById("searchInput"),
+    searchSuggestions: document.getElementById("searchSuggestions"),
     clearSearch: document.getElementById("clearSearch"),
     categoryPills: document.getElementById("categoryPills"),
     brandSelect: document.getElementById("brandSelect"),
@@ -323,13 +324,13 @@
   /* ---------------------------------------------------------------
      5. Render de tarjetas
      --------------------------------------------------------------- */
-  function cardTemplate(p, index) {
+  function cardTemplate(p, index, opts = {}) {
     const priceModeLabel = state.priceMode;
     const avail = isEffectivelyAvailable(p);
     const unavailableClass = avail ? "" : " is-unavailable";
     const badge = p.offer
       ? `<span class="card-badge">Antes ${money(p[priceModeLabel])}</span>`
-      : "";
+      : (opts.isNew ? `<span class="card-badge card-badge-new">Nuevo</span>` : "");
     const stamp = !avail
       ? `<span class="stamp-agotado">Agotado</span>`
       : "";
@@ -569,15 +570,116 @@
     render();
   }, 180);
 
-  el.searchInput.addEventListener("input", debouncedSearch);
+  el.searchInput.addEventListener("input", () => {
+    debouncedSearch();
+    renderSuggestions(el.searchInput.value.trim());
+  });
 
   el.clearSearch.addEventListener("click", () => {
     el.searchInput.value = "";
     state.query = "";
     el.clearSearch.hidden = true;
     setSearchInURL("");
+    hideSuggestions();
     render();
     el.searchInput.focus();
+  });
+
+  /* ---------------------------------------------------------------
+     7.5 Sugerencias del buscador (autocompletado)
+     --------------------------------------------------------------- */
+  let suggestionItems = [];
+  let suggestionActiveIndex = -1;
+
+  function hideSuggestions() {
+    el.searchSuggestions.hidden = true;
+    el.searchSuggestions.innerHTML = "";
+    el.searchInput.setAttribute("aria-expanded", "false");
+    suggestionItems = [];
+    suggestionActiveIndex = -1;
+  }
+
+  function goToSuggestion(id) {
+    window.location.href = `producto.html?id=${id}`;
+  }
+
+  function renderSuggestions(rawQuery) {
+    const q = normalize(rawQuery);
+    if (q.length < 2) { hideSuggestions(); return; }
+
+    const matches = PRODUCTS
+      .filter(p => isEffectivelyAvailable(p))
+      .filter(p => normalize(`${p.name} ${p.brand} ${p.ref}`).includes(q))
+      .slice(0, 6);
+
+    suggestionItems = matches;
+    suggestionActiveIndex = -1;
+
+    if (!matches.length) {
+      el.searchSuggestions.innerHTML = `<p class="suggestion-empty">Sin resultados para "${escapeHtml(rawQuery)}"</p>`;
+      el.searchSuggestions.hidden = false;
+      el.searchInput.setAttribute("aria-expanded", "true");
+      return;
+    }
+
+    el.searchSuggestions.innerHTML = matches.map((p, i) => `
+      <a class="suggestion-item" href="producto.html?id=${p.id}" data-idx="${i}" role="option">
+        <img src="${p.image}" alt="" loading="lazy">
+        <div class="sugg-body">
+          <div class="sugg-name">${escapeHtml(p.name)}</div>
+          <div class="sugg-meta">${escapeHtml(p.brand)}${p.ref ? " · Ref " + escapeHtml(p.ref) : ""}</div>
+        </div>
+        <div class="sugg-price">${money(p[state.priceMode])}</div>
+      </a>
+    `).join("") + `<div class="suggestion-viewall" id="suggestionViewAll">Ver todos los resultados para "${escapeHtml(rawQuery)}"</div>`;
+
+    el.searchSuggestions.hidden = false;
+    el.searchInput.setAttribute("aria-expanded", "true");
+
+    el.searchSuggestions.querySelectorAll(".suggestion-item").forEach(a => {
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        goToSuggestion(a.getAttribute("href").split("id=")[1]);
+      });
+    });
+    document.getElementById("suggestionViewAll")?.addEventListener("click", () => {
+      hideSuggestions();
+      el.searchInput.blur();
+    });
+  }
+
+  function setActiveSuggestion(idx) {
+    const options = el.searchSuggestions.querySelectorAll(".suggestion-item");
+    options.forEach(o => o.classList.remove("active"));
+    if (idx >= 0 && options[idx]) {
+      options[idx].classList.add("active");
+      options[idx].scrollIntoView({ block: "nearest" });
+    }
+    suggestionActiveIndex = idx;
+  }
+
+  el.searchInput.addEventListener("keydown", e => {
+    if (el.searchSuggestions.hidden || !suggestionItems.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion((suggestionActiveIndex + 1) % suggestionItems.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion((suggestionActiveIndex - 1 + suggestionItems.length) % suggestionItems.length);
+    } else if (e.key === "Enter" && suggestionActiveIndex >= 0) {
+      e.preventDefault();
+      goToSuggestion(suggestionItems[suggestionActiveIndex].id);
+    } else if (e.key === "Escape") {
+      hideSuggestions();
+    }
+  });
+
+  el.searchInput.addEventListener("focus", () => {
+    if (el.searchInput.value.trim().length >= 2) renderSuggestions(el.searchInput.value.trim());
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".search-wrap")) hideSuggestions();
   });
 
   el.brandSelect.addEventListener("change", () => {
@@ -1020,7 +1122,7 @@
       return;
     }
     el.recentSection.hidden = false;
-    el.recentScroll.innerHTML = recent.map((p, i) => cardTemplate(p, i)).join("");
+    el.recentScroll.innerHTML = recent.map((p, i) => cardTemplate(p, i, { isNew: true })).join("");
     attachCardListeners(el.recentScroll);
   }
 
