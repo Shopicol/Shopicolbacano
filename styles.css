@@ -97,7 +97,7 @@ button, select, input{ font-family:inherit; }
 }
 .banner-slide::before{
   content:""; position:absolute; inset:0;
-  background:linear-gradient(90deg, rgba(43,27,23,.72) 0%, rgba(43,27,23,.25) 65%, transparent 100%);
+  background:linear-gradient(90deg, rgba(43,27,23,.32) 0%, rgba(43,27,23,.12) 65%, transparent 100%);
 }
 .banner-slide-content{ position:relative; z-index:1; max-width:480px; }
 .banner-slide h3{ font-family:var(--font-display); font-size:clamp(22px,3.4vw,32px); margin:0 0 8px; }
