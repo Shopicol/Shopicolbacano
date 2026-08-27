@@ -1010,6 +1010,56 @@ button, select, input{ font-family:inherit; }
   border-top:1px solid rgba(255,255,255,.08);
 }
 
+/* ============================= SOCIAL PROOF TOAST ============================= */
+.social-proof-toast{
+  position:fixed;
+  right:20px; bottom:20px;
+  z-index:60;
+  max-width:300px;
+  display:flex; align-items:flex-start; gap:10px;
+  background:var(--paper, #fff);
+  border:1px solid var(--line, #eadfd4);
+  box-shadow:0 10px 30px rgba(43,27,23,.16);
+  border-radius:16px;
+  padding:14px 16px;
+  opacity:0; visibility:hidden;
+  transform:translateY(16px) scale(.97);
+  transition:opacity .35s ease, transform .35s ease, visibility .35s;
+  pointer-events:none;
+}
+.social-proof-toast.visible{
+  opacity:1; visibility:visible;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.social-proof-icon{
+  flex-shrink:0;
+  width:34px; height:34px; border-radius:50%;
+  background:var(--pink-soft, #fbe6ee);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+}
+.social-proof-body{ min-width:0; }
+.social-proof-line1{
+  margin:0; font-weight:700; font-size:13.5px; color:var(--ink, #2b1b17);
+}
+.social-proof-line2{
+  margin:2px 0 0; font-size:12.5px; color:var(--ink-soft, #8a766b);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.social-proof-close{
+  position:absolute; top:6px; right:8px;
+  border:none; background:none; cursor:pointer;
+  font-size:15px; line-height:1; color:var(--ink-soft, #8a766b);
+  padding:2px;
+}
+.social-proof-close:hover{ color:var(--ink, #2b1b17); }
+@media(max-width:640px){
+  .social-proof-toast{
+    left:12px; right:12px; bottom:12px; max-width:none;
+  }
+}
+
 /* ============================= ACCESSIBILITY / MOTION ============================= */
 :focus-visible{
   outline:2.5px solid var(--pink);
