@@ -53,6 +53,7 @@
     modalStockNote: document.getElementById("modalStockNote"),
     modalCategory: document.getElementById("modalCategory"),
     modalTones: document.getElementById("modalTones"),
+    modalToneHint: document.getElementById("modalToneHint"),
     toneChips: document.getElementById("toneChips"),
     modalQtyMinus: document.getElementById("modalQtyMinus"),
     modalQtyPlus: document.getElementById("modalQtyPlus"),
@@ -268,9 +269,11 @@
     if (currentTones.length) {
       el.modalTones.hidden = false;
       renderToneChips();
+      el.modalToneHint.hidden = true;
     } else {
       el.modalTones.hidden = true;
       el.toneChips.innerHTML = "";
+      el.modalToneHint.hidden = false;
     }
 
     currentProduct = p;
