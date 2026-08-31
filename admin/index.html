@@ -72,15 +72,58 @@
 
     <!-- Pestañas de navegación -->
     <nav class="admin-tabs">
-      <button class="admin-tab active" data-tab="products">📦 Productos</button>
+      <button class="admin-tab active" data-tab="summary">📊 Resumen</button>
+      <button class="admin-tab" data-tab="products">📦 Productos</button>
       <button class="admin-tab" data-tab="orders">🧾 Pedidos <span class="tab-badge" id="ordersBadge" hidden>0</span></button>
       <button class="admin-tab" data-tab="banners">🖼 Banners</button>
+      <button class="admin-tab" data-tab="coupons">🎟 Cupones</button>
+      <button class="admin-tab" data-tab="reviews">⭐ Reseñas <span class="tab-badge" id="reviewsBadge" hidden>0</span></button>
       <button class="admin-tab" data-tab="settings">🎨 Ajustes</button>
       <button class="admin-tab" data-tab="customers">👥 Clientes</button>
     </nav>
 
+    <!-- ============ TAB: RESUMEN ============ -->
+    <div class="admin-tab-panel" id="tabSummary">
+      <section class="summary-cards" id="summaryCards">
+        <div class="summary-card">
+          <span class="summary-card-label">Ventas hoy</span>
+          <strong class="summary-card-value" id="sumToday">$0</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card-label">Ventas esta semana</span>
+          <strong class="summary-card-value" id="sumWeek">$0</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card-label">Ventas este mes</span>
+          <strong class="summary-card-value" id="sumMonth">$0</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card-label">Total histórico</span>
+          <strong class="summary-card-value" id="sumTotal">$0</strong>
+        </div>
+      </section>
+      <p class="summary-note">No incluye pedidos cancelados.</p>
+
+      <div class="summary-grid">
+        <section class="summary-block">
+          <h3>Pedidos por estado</h3>
+          <div id="summaryStatusBars" class="summary-status-bars"><!-- filled by JS --></div>
+        </section>
+
+        <section class="summary-block">
+          <h3>🏆 Productos más vendidos</h3>
+          <ol id="summaryTopProducts" class="summary-top-list"><!-- filled by JS --></ol>
+        </section>
+      </div>
+
+      <section class="summary-block">
+        <h3>Últimos pedidos</h3>
+        <div id="summaryRecentOrders" class="summary-recent-orders"><!-- filled by JS --></div>
+      </section>
+    </div>
+
     <!-- ============ TAB: PRODUCTOS ============ -->
-    <div class="admin-tab-panel" id="tabProducts">
+    <div class="admin-tab-panel" id="tabProducts" hidden>
 
     <!-- Barra de acciones + stats -->
     <section class="admin-toolbar">
@@ -207,6 +250,46 @@
       <section class="banners-grid" id="bannersGrid"><!-- filas por JS --></section>
       <p class="admin-empty" id="bannersEmpty" hidden>Todavía no has creado ningún banner.</p>
     </div><!-- /tabBanners -->
+
+    <!-- ============ TAB: CUPONES ============ -->
+    <div class="admin-tab-panel" id="tabCoupons" hidden>
+      <section class="admin-toolbar">
+        <p class="banners-hint">Los clientes escriben el código en el carrito para obtener el descuento.</p>
+        <div class="admin-actions">
+          <button class="btn-primary" id="newCouponBtn">+ Nuevo cupón</button>
+        </div>
+      </section>
+
+      <section class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descuento</th>
+              <th>Vence</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="couponsTableBody"><!-- filas por JS --></tbody>
+        </table>
+      </section>
+      <p class="admin-empty" id="couponsEmpty" hidden>Todavía no has creado ningún cupón.</p>
+    </div><!-- /tabCoupons -->
+
+    <!-- ============ TAB: RESEÑAS ============ -->
+    <div class="admin-tab-panel" id="tabReviews" hidden>
+      <section class="admin-toolbar">
+        <p class="banners-hint">Las reseñas nuevas quedan pendientes hasta que las apruebes; solo entonces se ven en el sitio.</p>
+        <div class="admin-stats">
+          <div class="mini-stat"><strong id="statReviewsPending">0</strong><span>pendientes</span></div>
+          <div class="mini-stat"><strong id="statReviewsApproved">0</strong><span>aprobadas</span></div>
+        </div>
+      </section>
+
+      <div class="reviews-admin-list" id="reviewsAdminList"><!-- filas por JS --></div>
+      <p class="admin-empty" id="reviewsAdminEmpty" hidden>Todavía no hay reseñas.</p>
+    </div><!-- /tabReviews -->
 
     <!-- ============ TAB: AJUSTES ============ -->
     <div class="admin-tab-panel" id="tabSettings" hidden>
@@ -707,6 +790,59 @@
         </div>
       </div>
       <p class="form-error" id="bannerFormError" hidden></p>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: NUEVO/EDITAR CUPÓN ============ -->
+<div class="modal-overlay" id="couponModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="couponModalClose" aria-label="Cerrar">✕</button>
+    <h2 id="couponModalTitle">Nuevo cupón</h2>
+
+    <form id="couponForm" class="product-form">
+      <input type="hidden" id="couponFieldId">
+
+      <div class="form-row">
+        <label class="grow">
+          <span>Código *</span>
+          <input type="text" id="couponFieldCode" required placeholder="Ej: BACANO10" style="text-transform:uppercase;">
+        </label>
+      </div>
+
+      <div class="form-row two">
+        <label>
+          <span>Tipo de descuento *</span>
+          <select id="couponFieldType" required>
+            <option value="percent">Porcentaje (%)</option>
+            <option value="fixed">Monto fijo ($)</option>
+          </select>
+        </label>
+        <label>
+          <span>Valor *</span>
+          <input type="number" id="couponFieldValue" min="0.01" step="0.01" required placeholder="Ej: 10">
+        </label>
+      </div>
+
+      <div class="form-row two">
+        <label>
+          <span>Vence (opcional)</span>
+          <input type="date" id="couponFieldExpires">
+        </label>
+        <label class="checkbox-label" style="margin-top:20px;">
+          <input type="checkbox" id="couponFieldActive" checked>
+          <span>Activo</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-danger" id="deleteCouponBtn" hidden>Eliminar cupón</button>
+        <div class="form-actions-right">
+          <button type="button" class="btn-ghost" id="cancelCouponBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveCouponBtn">Guardar cupón</button>
+        </div>
+      </div>
+      <p class="form-error" id="couponFormError" hidden></p>
     </form>
   </div>
 </div>
