@@ -72,6 +72,13 @@
       <span class="mode-label">Ver precio <strong id="modeWord">Detal</strong></span>
     </button>
 
+    <button class="favorites-btn" id="favoritesBtn" aria-label="Ver favoritos" aria-pressed="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span class="cart-count" id="favoritesCount" hidden>0</span>
+    </button>
+
     <button class="cart-btn" id="cartBtn" aria-label="Ver carrito de compras">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M3 4H5L5.4 6M5.4 6H20L18 13H7L5.4 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -220,6 +227,21 @@
       <div class="mayor-progress" id="mayorProgress">
         <div class="mayor-progress-bar"><div class="mayor-progress-fill" id="mayorProgressFill"></div></div>
         <p class="mayor-progress-text" id="mayorProgressText"></p>
+      </div>
+
+      <div class="coupon-row">
+        <input type="text" id="couponInput" placeholder="¿Tienes un cupón?" autocomplete="off">
+        <button type="button" id="couponApplyBtn">Aplicar</button>
+      </div>
+      <p class="coupon-message" id="couponMessage" hidden></p>
+
+      <div class="cart-total-row cart-subtotal-row" id="cartSubtotalRow" hidden>
+        <span>Subtotal</span>
+        <span id="cartSubtotal">$0</span>
+      </div>
+      <div class="cart-total-row cart-discount-row" id="cartDiscountRow" hidden>
+        <span>Descuento <span id="cartCouponCodeLabel"></span></span>
+        <span id="cartDiscountAmount">-$0</span>
       </div>
       <div class="cart-total-row">
         <span>Total (<span id="cartPriceModeLabel">Detal</span>)</span>

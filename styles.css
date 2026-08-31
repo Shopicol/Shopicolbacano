@@ -175,6 +175,42 @@ button, select, input{ font-family:inherit; }
 .related-scroll .card{ flex:0 0 200px; }
 @media(min-width:640px){ .related-scroll .card{ flex:0 0 220px; } }
 
+/* ============================= RESEÑAS ============================= */
+.review-summary{ display:flex; align-items:center; gap:8px; margin:2px 0 10px; }
+.review-stars{ color:var(--gold-dark); font-size:16px; letter-spacing:1px; }
+.review-summary-count{ font-size:13px; color:var(--ink-soft); }
+
+.reviews-section{ max-width:760px; margin:0 auto 60px; padding:0 20px; }
+.reviews-list{ display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+.review-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:14px;
+  padding:16px 18px; box-shadow:var(--shadow-sm);
+}
+.review-card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.review-card-head strong{ font-size:14px; }
+.review-comment{ font-size:13.5px; color:var(--ink-soft); margin:0 0 8px; line-height:1.5; }
+.review-date{ font-size:11.5px; color:var(--ink-soft); opacity:.8; }
+.reviews-empty{ text-align:center; color:var(--ink-soft); font-size:13.5px; margin-bottom:24px; }
+
+.review-form-card{
+  background:var(--cream-deep); border-radius:18px; padding:22px 24px;
+}
+.review-form-card h3{ font-family:var(--font-display); font-size:17px; margin:0 0 14px; }
+.review-stars-input{ display:flex; gap:6px; margin-bottom:14px; }
+.review-stars-input button{
+  background:none; border:none; font-size:26px; line-height:1; cursor:pointer;
+  color:var(--line); transition:color .1s, transform .1s;
+}
+.review-stars-input button.active{ color:var(--gold-dark); transform:scale(1.08); }
+#reviewForm input[type="text"], #reviewForm textarea{
+  width:100%; padding:11px 14px; border-radius:12px; border:1.5px solid var(--line);
+  background:var(--paper); font-family:inherit; font-size:13.5px; margin-bottom:10px; resize:vertical;
+}
+#reviewForm input:focus, #reviewForm textarea:focus{ outline:none; border-color:var(--pink); }
+.review-form-message{ font-size:12.5px; margin:10px 0 0; }
+.review-form-message.review-ok{ color:#227a45; }
+.review-form-message.review-error{ color:var(--danger); }
+
 /* ============================= HEADER (continúa) ============================= */
 .site-header{
   position:sticky; top:0; z-index:40;
@@ -333,6 +369,31 @@ button, select, input{ font-family:inherit; }
   border-radius:999px; display:flex; align-items:center; justify-content:center;
 }
 .cart-count[hidden]{ display:none; }
+
+.favorites-btn{
+  position:relative; flex-shrink:0;
+  background:var(--paper); border:1.5px solid var(--line); color:var(--ink);
+  border-radius:999px; width:42px; height:42px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:border-color .15s, transform .15s, background .15s, color .15s;
+}
+.favorites-btn:hover{ border-color:var(--pink); transform:translateY(-1px); }
+.favorites-btn.active{ background:var(--pink); border-color:var(--pink); color:#fff; }
+
+/* Corazón de favorito sobre la foto del producto (tarjetas + página de producto) */
+.card-fav{
+  position:absolute; top:8px; right:8px;
+  width:30px; height:30px; border-radius:50%;
+  border:none; background:rgba(255,255,255,.9); color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18);
+  transition:transform .15s, color .15s;
+  z-index:2;
+}
+.card-fav:hover{ transform:scale(1.08); }
+.card-fav.active{ color:var(--pink); }
+.card-fav.active svg path{ fill:var(--pink); }
+.card-fav.modal-fav{ top:14px; right:14px; width:38px; height:38px; }
 
 /* ============================= HERO ============================= */
 .hero{
@@ -603,7 +664,7 @@ button, select, input{ font-family:inherit; }
 }
 
 .card-lowstock{
-  position:absolute; top:8px; right:8px; left:auto;
+  position:absolute; top:44px; right:8px; left:auto;
   background:var(--gold-dark);
   color:#fff;
   font-size:9.5px; font-weight:700;
@@ -906,6 +967,29 @@ button, select, input{ font-family:inherit; }
 }
 .cart-total-row strong{ font-family:var(--font-display); font-size:22px; color:var(--pink); }
 .btn-block{ width:100%; }
+
+/* ---- cupón de descuento ---- */
+.coupon-row{ display:flex; gap:8px; margin-bottom:8px; }
+.coupon-row input{
+  flex:1; padding:10px 14px; border-radius:999px;
+  border:1.5px solid var(--line); background:var(--paper);
+  font-size:13.5px; color:var(--ink); text-transform:uppercase;
+}
+.coupon-row input:focus{ outline:none; border-color:var(--pink); }
+.coupon-row button{
+  padding:10px 16px; border-radius:999px; border:none;
+  background:var(--ink); color:#fff; font-size:13px; font-weight:600;
+  cursor:pointer; white-space:nowrap; transition:background .15s;
+}
+.coupon-row button:hover{ background:var(--pink); }
+.coupon-row button:disabled{ opacity:.6; cursor:default; }
+.coupon-message{ font-size:12.5px; margin:0 0 12px; padding:0 2px; }
+.coupon-message.coupon-ok{ color:#227a45; }
+.coupon-message.coupon-error{ color:var(--danger, #c0294a); }
+.coupon-message[hidden]{ display:none; }
+.cart-subtotal-row, .cart-discount-row{ font-size:13px; color:var(--ink-soft); margin-bottom:6px; }
+.cart-discount-row{ color:#227a45; font-weight:600; }
+.cart-subtotal-row[hidden], .cart-discount-row[hidden]{ display:none; }
 
 /* ---- barra de progreso hacia precio Mayor ---- */
 .mayor-progress{ margin-bottom:16px; }

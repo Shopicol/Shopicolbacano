@@ -55,6 +55,12 @@
       <span class="mode-label">Ver precio <strong id="modeWord">Detal</strong></span>
     </button>
 
+    <a class="favorites-btn" href="index.html?favoritos=1" aria-label="Ver mis favoritos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </a>
+
     <button class="cart-btn" id="cartBtn" aria-label="Ver carrito de compras">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M3 4H5L5.4 6M5.4 6H20L18 13H7L5.4 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -82,6 +88,11 @@
     <div class="modal-img-wrap">
       <span class="modal-stamp" id="modalStamp" hidden>Agotado</span>
       <img id="modalImg" src="" alt="">
+      <button class="card-fav modal-fav" id="modalFavBtn" aria-label="Agregar a favoritos" title="Favorito">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <button class="modal-gallery-nav prev" id="modalGalleryPrev" aria-label="Foto anterior" hidden>‹</button>
       <button class="modal-gallery-nav next" id="modalGalleryNext" aria-label="Foto siguiente" hidden>›</button>
       <p class="modal-tone-hint" id="modalToneHint" hidden>No te preocupes si este producto no tiene tono o variación: al enviar tu pedido por WhatsApp, la asesora te preguntará por el tono.</p>
@@ -92,6 +103,10 @@
       <p class="modal-brand" id="modalBrand"></p>
       <h3 id="modalTitle"></h3>
       <p class="modal-ref" id="modalRef"></p>
+      <div class="review-summary" id="reviewSummary" hidden>
+        <span class="review-stars" id="reviewSummaryStars"></span>
+        <span class="review-summary-count" id="reviewSummaryCount"></span>
+      </div>
 
       <div class="modal-prices">
         <div class="price-box detal">
@@ -124,6 +139,32 @@
     </div>
   </div>
 </main>
+
+<!-- ============ RESEÑAS ============ -->
+<section class="reviews-section" id="reviewsSection">
+  <h2 class="related-title">✦ Reseñas de clientas ✦</h2>
+
+  <div class="reviews-list" id="reviewsList"><!-- filled by JS --></div>
+  <p class="reviews-empty" id="reviewsEmpty" hidden>Todavía no hay reseñas de este producto. ¡Sé la primera en dejar una!</p>
+
+  <div class="review-form-card">
+    <h3>Deja tu reseña</h3>
+    <form id="reviewForm">
+      <div class="review-stars-input" id="reviewStarsInput" role="radiogroup" aria-label="Calificación">
+        <button type="button" data-star="1" aria-label="1 estrella">★</button>
+        <button type="button" data-star="2" aria-label="2 estrellas">★</button>
+        <button type="button" data-star="3" aria-label="3 estrellas">★</button>
+        <button type="button" data-star="4" aria-label="4 estrellas">★</button>
+        <button type="button" data-star="5" aria-label="5 estrellas">★</button>
+      </div>
+      <input type="hidden" id="reviewRatingValue" required>
+      <input type="text" id="reviewName" placeholder="Tu nombre" required maxlength="60">
+      <textarea id="reviewComment" placeholder="¿Qué te pareció? (opcional)" maxlength="500" rows="3"></textarea>
+      <button type="submit" class="btn-primary" id="reviewSubmitBtn">Enviar reseña</button>
+      <p class="review-form-message" id="reviewFormMessage" hidden></p>
+    </form>
+  </div>
+</section>
 
 <!-- ============ PRODUCTOS RELACIONADOS ============ -->
 <section class="related-section" id="relatedSection" hidden>

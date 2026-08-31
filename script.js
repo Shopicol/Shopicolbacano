@@ -38,6 +38,7 @@
     brand: "",
     sort: "relevance",
     priceMode: "detal", // "detal" | "mayor"
+    showOnlyFavorites: false,
   };
 
   // El catálogo se llena de forma asíncrona en init() — puede venir de
@@ -108,6 +109,8 @@
     toneChips: document.getElementById("toneChips"),
 
     // carrito
+    favoritesBtn: document.getElementById("favoritesBtn"),
+    favoritesCount: document.getElementById("favoritesCount"),
     cartBtn: document.getElementById("cartBtn"),
     cartCount: document.getElementById("cartCount"),
     cartOverlay: document.getElementById("cartOverlay"),
@@ -121,6 +124,14 @@
     mayorProgressFill: document.getElementById("mayorProgressFill"),
     mayorProgressText: document.getElementById("mayorProgressText"),
     checkoutBtn: document.getElementById("checkoutBtn"),
+    couponInput: document.getElementById("couponInput"),
+    couponApplyBtn: document.getElementById("couponApplyBtn"),
+    couponMessage: document.getElementById("couponMessage"),
+    cartSubtotalRow: document.getElementById("cartSubtotalRow"),
+    cartSubtotal: document.getElementById("cartSubtotal"),
+    cartDiscountRow: document.getElementById("cartDiscountRow"),
+    cartDiscountAmount: document.getElementById("cartDiscountAmount"),
+    cartCouponCodeLabel: document.getElementById("cartCouponCodeLabel"),
 
     // checkout
     checkoutOverlay: document.getElementById("checkoutOverlay"),
@@ -177,6 +188,53 @@
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, ""); // quita tildes para búsqueda flexible
+  }
+
+  /* ---------------------------------------------------------------
+     2.5 Favoritos (lista de deseos) — se guardan en este navegador
+     --------------------------------------------------------------- */
+  const FAVORITES_KEY = "sb_favorites";
+
+  function getFavorites() {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isFavorite(id) {
+    return getFavorites().includes(String(id));
+  }
+
+  function toggleFavorite(id) {
+    const favs = getFavorites();
+    const strId = String(id);
+    const idx = favs.indexOf(strId);
+    if (idx === -1) {
+      favs.push(strId);
+    } else {
+      favs.splice(idx, 1);
+    }
+    try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); } catch (e) {}
+    updateFavoritesUI();
+    return idx === -1; // true = se acaba de agregar, false = se quitó
+  }
+
+  function updateFavoritesUI() {
+    const count = getFavorites().length;
+    if (el.favoritesCount) {
+      el.favoritesCount.textContent = count;
+      el.favoritesCount.hidden = count === 0;
+    }
+    if (el.favoritesBtn) {
+      el.favoritesBtn.setAttribute("aria-pressed", String(state.showOnlyFavorites));
+      el.favoritesBtn.classList.toggle("active", state.showOnlyFavorites);
+    }
+    document.querySelectorAll(".card-fav[data-fav-id]").forEach(btn => {
+      btn.classList.toggle("active", isFavorite(btn.dataset.favId));
+    });
   }
 
   /* ---------------------------------------------------------------
@@ -296,6 +354,7 @@
       if (!isEffectivelyAvailable(p)) return false; // los agotados nunca se muestran al público
       if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
+      if (state.showOnlyFavorites && !isFavorite(p.id)) return false;
 
       if (q) {
         const haystack = normalize(`${p.name} ${p.brand} ${p.category} ${p.ref}`);
@@ -341,12 +400,18 @@
     const quickAdd = (avail && !(p.tones || "").trim())
       ? `<button class="card-quickadd" data-quickadd="${p.id}" aria-label="Agregar ${p.name} al carrito" title="Agregar al carrito">+</button>`
       : "";
+    const favActive = isFavorite(p.id) ? " active" : "";
 
     return `
       <article class="card${unavailableClass}" style="--delay:${Math.min(index * 0.03, 0.5)}s" data-id="${p.id}" tabindex="0" role="button" aria-label="Ver detalle de ${p.name}">
         <div class="card-img-wrap">
           ${lowStock}
           <img src="${p.image}" alt="${p.name}" loading="lazy" width="300" height="300">
+          <button class="card-fav${favActive}" data-fav-id="${p.id}" aria-label="Agregar ${p.name} a favoritos" title="Favorito">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </button>
           ${badge}
           ${stamp}
           ${quickAdd}
@@ -397,6 +462,16 @@
           btn.classList.remove("added");
           btn.textContent = "+";
         }, 700);
+      });
+    });
+
+    container.querySelectorAll("[data-fav-id]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        const nowFavorite = toggleFavorite(btn.dataset.favId);
+        btn.classList.toggle("active", nowFavorite);
+        // Si estamos viendo solo favoritos y se quitó uno, lo saca de la vista
+        if (state.showOnlyFavorites && !nowFavorite) render();
       });
     });
   }
@@ -823,6 +898,82 @@
   function cartTotal() {
     return cartLineItems().reduce((sum, item) => sum + item.qty * item.price, 0);
   }
+
+  /* ---------------------------------------------------------------
+     Cupones de descuento
+     --------------------------------------------------------------- */
+  let appliedCoupon = null; // { code, discount_type, discount_value }
+
+  function computeDiscount(subtotal) {
+    if (!appliedCoupon) return 0;
+    const raw = appliedCoupon.discount_type === "percent"
+      ? subtotal * (appliedCoupon.discount_value / 100)
+      : appliedCoupon.discount_value;
+    return Math.min(raw, subtotal);
+  }
+
+  function cartFinalTotal() {
+    const subtotal = cartTotal();
+    return Math.max(0, subtotal - computeDiscount(subtotal));
+  }
+
+  function showCouponMessage(text, ok) {
+    if (!el.couponMessage) return;
+    el.couponMessage.textContent = text;
+    el.couponMessage.hidden = false;
+    el.couponMessage.classList.toggle("coupon-ok", !!ok);
+    el.couponMessage.classList.toggle("coupon-error", !ok);
+  }
+
+  async function applyCouponFromInput() {
+    const raw = (el.couponInput.value || "").trim();
+    if (!raw) return;
+    if (!SUPABASE_READY) {
+      showCouponMessage("Los cupones no están disponibles en este momento.", false);
+      return;
+    }
+    const code = raw.toUpperCase();
+    el.couponApplyBtn.disabled = true;
+    el.couponApplyBtn.textContent = "…";
+    try {
+      const { data, error } = await supabaseClient
+        .from("coupons")
+        .select("*")
+        .ilike("code", code)
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) {
+        appliedCoupon = null;
+        showCouponMessage("Ese cupón no existe o ya no es válido.", false);
+      } else if (!data.active) {
+        appliedCoupon = null;
+        showCouponMessage("Ese cupón ya no está activo.", false);
+      } else if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        appliedCoupon = null;
+        showCouponMessage("Ese cupón ya venció.", false);
+      } else {
+        appliedCoupon = data;
+        const discountLabel = data.discount_type === "percent" ? `${data.discount_value}%` : money(data.discount_value);
+        showCouponMessage(`¡Cupón "${data.code}" aplicado! -${discountLabel}`, true);
+        trackEvent("apply_coupon", { coupon_code: data.code });
+      }
+    } catch (err) {
+      appliedCoupon = null;
+      showCouponMessage("No se pudo validar el cupón. Intenta de nuevo.", false);
+    }
+    el.couponApplyBtn.disabled = false;
+    el.couponApplyBtn.textContent = "Aplicar";
+    renderCartPanel();
+  }
+
+  if (el.couponApplyBtn) {
+    el.couponApplyBtn.addEventListener("click", applyCouponFromInput);
+    el.couponInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); applyCouponFromInput(); }
+    });
+  }
+
   function renderCartBadge() {
     const count = cartCount();
     el.cartCount.textContent = count;
@@ -854,7 +1005,20 @@
     el.cartFooter.hidden = false;
     const unlocked = renderMayorProgress();
     el.cartPriceModeLabel.textContent = unlocked ? "Mayor" : "Detal";
-    el.cartTotal.textContent = money(cartTotal());
+
+    const subtotal = cartTotal();
+    const discount = computeDiscount(subtotal);
+    if (discount > 0) {
+      el.cartSubtotalRow.hidden = false;
+      el.cartSubtotal.textContent = money(subtotal);
+      el.cartDiscountRow.hidden = false;
+      el.cartDiscountAmount.textContent = "-" + money(discount);
+      el.cartCouponCodeLabel.textContent = appliedCoupon ? `(${appliedCoupon.code})` : "";
+    } else {
+      el.cartSubtotalRow.hidden = true;
+      el.cartDiscountRow.hidden = true;
+    }
+    el.cartTotal.textContent = money(subtotal - discount);
     el.cartItems.innerHTML = items.map(item => `
       <div class="cart-line">
         <img src="${item.image}" alt="">
@@ -885,6 +1049,17 @@
   }
 
   el.cartBtn.addEventListener("click", openCart);
+
+  if (el.favoritesBtn) {
+    el.favoritesBtn.addEventListener("click", () => {
+      state.showOnlyFavorites = !state.showOnlyFavorites;
+      updateFavoritesUI();
+      render();
+      if (state.showOnlyFavorites) {
+        el.productGrid?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
   el.cartClose.addEventListener("click", closeCart);
   el.cartOverlay.addEventListener("click", e => { if (e.target === el.cartOverlay) closeCart(); });
 
@@ -954,6 +1129,9 @@
     }
 
     const unlockedMayor = isMayorUnlocked();
+    const subtotal = cartTotal();
+    const discount = computeDiscount(subtotal);
+    const finalTotal = Math.max(0, subtotal - discount);
     const order = {
       customer_name: el.custName.value.trim(),
       phone: el.custPhone.value.trim(),
@@ -964,7 +1142,9 @@
       address: el.custAddress.value.trim(),
       note: el.custNote.value.trim(),
       items: items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, tone: i.tone || null })),
-      total: cartTotal(),
+      total: finalTotal,
+      coupon_code: appliedCoupon ? appliedCoupon.code : null,
+      discount: discount,
       price_mode: unlockedMayor ? "mayor" : "detal",
       status: "nuevo",
     };
@@ -1000,6 +1180,10 @@
     lines.push("");
     items.forEach(i => lines.push(`• ${i.qty}x ${i.name} — ${money(i.price)} c/u`));
     lines.push("");
+    if (order.discount > 0) {
+      lines.push(`Subtotal: ${money(subtotal)}`);
+      lines.push(`Cupón (${order.coupon_code}): -${money(order.discount)}`);
+    }
     lines.push(`Total: ${money(order.total)} (${unlockedMayor ? "Mayor" : "Detal"})`);
     lines.push("");
     lines.push(`Nombre: ${order.customer_name}`);
@@ -1023,6 +1207,9 @@
     // Vacía el carrito y muestra la confirmación
     trackEvent("generate_lead", { value: order.total, currency: "USD", payment_method: order.payment_method });
     cart = {};
+    appliedCoupon = null;
+    if (el.couponInput) el.couponInput.value = "";
+    if (el.couponMessage) el.couponMessage.hidden = true;
     saveCart();
     renderCartBadge();
     el.checkoutForm.hidden = true;
@@ -1449,12 +1636,20 @@
       el.clearSearch.hidden = false;
     }
 
+    // Si el link trae ?favoritos=1 (ej. viniendo del corazón en la página
+    // de producto), abre directo mostrando solo los favoritos guardados.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("favoritos") === "1") {
+      state.showOnlyFavorites = true;
+    }
+
     buildBrandOptions();
     buildCategoryPills();
     renderCartBadge();
     renderRecentSection();
     renderFeatured();
     render();
+    updateFavoritesUI();
     loadBanners();
     initSocialProof();
   }

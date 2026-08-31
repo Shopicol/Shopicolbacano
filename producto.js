@@ -41,6 +41,7 @@
 
     modalImg: document.getElementById("modalImg"),
     modalStamp: document.getElementById("modalStamp"),
+    modalFavBtn: document.getElementById("modalFavBtn"),
     modalGalleryPrev: document.getElementById("modalGalleryPrev"),
     modalGalleryNext: document.getElementById("modalGalleryNext"),
     modalThumbs: document.getElementById("modalThumbs"),
@@ -62,6 +63,18 @@
 
     relatedSection: document.getElementById("relatedSection"),
     relatedScroll: document.getElementById("relatedScroll"),
+    reviewSummary: document.getElementById("reviewSummary"),
+    reviewSummaryStars: document.getElementById("reviewSummaryStars"),
+    reviewSummaryCount: document.getElementById("reviewSummaryCount"),
+    reviewsList: document.getElementById("reviewsList"),
+    reviewsEmpty: document.getElementById("reviewsEmpty"),
+    reviewForm: document.getElementById("reviewForm"),
+    reviewStarsInput: document.getElementById("reviewStarsInput"),
+    reviewRatingValue: document.getElementById("reviewRatingValue"),
+    reviewName: document.getElementById("reviewName"),
+    reviewComment: document.getElementById("reviewComment"),
+    reviewSubmitBtn: document.getElementById("reviewSubmitBtn"),
+    reviewFormMessage: document.getElementById("reviewFormMessage"),
 
     cartOverlay: document.getElementById("cartOverlay"),
     cartClose: document.getElementById("cartClose"),
@@ -212,6 +225,42 @@
   }
 
   /* ---------------------------------------------------------------
+     Favoritos (misma clave que usa el catálogo principal)
+     --------------------------------------------------------------- */
+  const FAVORITES_KEY = "sb_favorites";
+
+  function getFavorites() {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isFavorite(id) {
+    return getFavorites().includes(String(id));
+  }
+
+  function toggleFavorite(id) {
+    const favs = getFavorites();
+    const strId = String(id);
+    const idx = favs.indexOf(strId);
+    if (idx === -1) favs.push(strId);
+    else favs.splice(idx, 1);
+    try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); } catch (e) {}
+    return idx === -1;
+  }
+
+  if (el.modalFavBtn) {
+    el.modalFavBtn.addEventListener("click", () => {
+      if (!currentProduct) return;
+      const nowFav = toggleFavorite(currentProduct.id);
+      el.modalFavBtn.classList.toggle("active", nowFav);
+    });
+  }
+
+  /* ---------------------------------------------------------------
      Render del producto principal
      --------------------------------------------------------------- */
   let currentProduct = null;
@@ -220,6 +269,8 @@
   function renderProduct(p) {
     trackEvent("view_item", { item_name: p.name, item_brand: p.brand, item_category: p.category });
     const avail = isEffectivelyAvailable(p);
+
+    if (el.modalFavBtn) el.modalFavBtn.classList.toggle("active", isFavorite(p.id));
 
     document.title = `${p.name} — Shopicol Bacano`;
     el.pageTitle.textContent = `${p.name} — Shopicol Bacano`;
@@ -291,6 +342,7 @@
     el.modalQty.textContent = modalQtyValue;
     el.modalAddCart.disabled = !avail;
     el.modalAddCart.textContent = avail ? "Agregar al carrito" : "Agotado";
+    loadReviews(p.id);
   }
 
   el.modalQtyMinus.addEventListener("click", () => { modalQtyValue = Math.max(1, modalQtyValue - 1); el.modalQty.textContent = modalQtyValue; });
@@ -311,6 +363,130 @@
     el.relatedSection.hidden = false;
     el.relatedScroll.innerHTML = related.map((x, i) => cardTemplate(x, i)).join("");
     attachCardListeners(el.relatedScroll);
+  }
+
+  /* ---------------------------------------------------------------
+     Reseñas de clientas
+     --------------------------------------------------------------- */
+  function starsHTML(rating, max = 5) {
+    const full = Math.round(rating);
+    let out = "";
+    for (let i = 1; i <= max; i++) out += i <= full ? "★" : "☆";
+    return out;
+  }
+
+  async function loadReviews(productId) {
+    if (!SUPABASE_READY) {
+      el.reviewSummary.hidden = true;
+      el.reviewsList.innerHTML = "";
+      el.reviewsEmpty.hidden = false;
+      return;
+    }
+    try {
+      const { data, error } = await supabaseClient
+        .from("reviews")
+        .select("*")
+        .eq("product_id", String(productId))
+        .eq("approved", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const reviews = data || [];
+      if (!reviews.length) {
+        el.reviewSummary.hidden = true;
+        el.reviewsList.innerHTML = "";
+        el.reviewsEmpty.hidden = false;
+        return;
+      }
+
+      el.reviewsEmpty.hidden = true;
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      el.reviewSummary.hidden = false;
+      el.reviewSummaryStars.textContent = starsHTML(avg);
+      el.reviewSummaryCount.textContent = `${avg.toFixed(1)} · ${reviews.length} reseña${reviews.length === 1 ? "" : "s"}`;
+
+      el.reviewsList.innerHTML = reviews.map(r => `
+        <div class="review-card">
+          <div class="review-card-head">
+            <strong>${escapeHTML(r.customer_name)}</strong>
+            <span class="review-stars">${starsHTML(r.rating)}</span>
+          </div>
+          ${r.comment ? `<p class="review-comment">${escapeHTML(r.comment)}</p>` : ""}
+          <span class="review-date">${new Date(r.created_at).toLocaleDateString("es-VE", { dateStyle: "medium" })}</span>
+        </div>
+      `).join("");
+    } catch (err) {
+      console.warn("No se pudieron cargar las reseñas:", err.message);
+    }
+  }
+
+  function escapeHTML(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  // Selector de estrellas del formulario
+  let selectedRating = 0;
+  if (el.reviewStarsInput) {
+    const starButtons = el.reviewStarsInput.querySelectorAll("[data-star]");
+    function paintStars(rating) {
+      starButtons.forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.star) <= rating);
+      });
+    }
+    starButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedRating = Number(btn.dataset.star);
+        el.reviewRatingValue.value = selectedRating;
+        paintStars(selectedRating);
+      });
+      btn.addEventListener("mouseenter", () => paintStars(Number(btn.dataset.star)));
+    });
+    el.reviewStarsInput.addEventListener("mouseleave", () => paintStars(selectedRating));
+  }
+
+  if (el.reviewForm) {
+    el.reviewForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      el.reviewFormMessage.hidden = true;
+
+      if (!selectedRating) {
+        el.reviewFormMessage.textContent = "Por favor selecciona una calificación con las estrellas.";
+        el.reviewFormMessage.className = "review-form-message review-error";
+        el.reviewFormMessage.hidden = false;
+        return;
+      }
+      if (!SUPABASE_READY || !currentProduct) return;
+
+      el.reviewSubmitBtn.disabled = true;
+      el.reviewSubmitBtn.textContent = "Enviando…";
+
+      try {
+        const { error } = await supabaseClient.from("reviews").insert({
+          product_id: String(currentProduct.id),
+          customer_name: el.reviewName.value.trim(),
+          rating: selectedRating,
+          comment: el.reviewComment.value.trim(),
+          approved: false,
+        });
+        if (error) throw error;
+
+        el.reviewFormMessage.textContent = "¡Gracias por tu reseña! Se va a mostrar en cuanto la revisemos.";
+        el.reviewFormMessage.className = "review-form-message review-ok";
+        el.reviewFormMessage.hidden = false;
+        el.reviewForm.reset();
+        selectedRating = 0;
+        el.reviewStarsInput.querySelectorAll("[data-star]").forEach(b => b.classList.remove("active"));
+      } catch (err) {
+        el.reviewFormMessage.textContent = "No se pudo enviar tu reseña. Intenta de nuevo.";
+        el.reviewFormMessage.className = "review-form-message review-error";
+        el.reviewFormMessage.hidden = false;
+      } finally {
+        el.reviewSubmitBtn.disabled = false;
+        el.reviewSubmitBtn.textContent = "Enviar reseña";
+      }
+    });
   }
 
   /* ---------------------------------------------------------------
