@@ -88,9 +88,34 @@
 
     // tabs
     tabButtons: document.querySelectorAll(".admin-tab"),
+    tabSummary: document.getElementById("tabSummary"),
     tabProducts: document.getElementById("tabProducts"),
     tabOrders: document.getElementById("tabOrders"),
     tabBanners: document.getElementById("tabBanners"),
+    tabCoupons: document.getElementById("tabCoupons"),
+    tabReviews: document.getElementById("tabReviews"),
+    reviewsAdminList: document.getElementById("reviewsAdminList"),
+    reviewsAdminEmpty: document.getElementById("reviewsAdminEmpty"),
+    statReviewsPending: document.getElementById("statReviewsPending"),
+    statReviewsApproved: document.getElementById("statReviewsApproved"),
+    reviewsBadge: document.getElementById("reviewsBadge"),
+    couponsTableBody: document.getElementById("couponsTableBody"),
+    couponsEmpty: document.getElementById("couponsEmpty"),
+    newCouponBtn: document.getElementById("newCouponBtn"),
+    couponModalOverlay: document.getElementById("couponModalOverlay"),
+    couponModalTitle: document.getElementById("couponModalTitle"),
+    couponModalClose: document.getElementById("couponModalClose"),
+    cancelCouponBtn: document.getElementById("cancelCouponBtn"),
+    couponForm: document.getElementById("couponForm"),
+    couponFieldId: document.getElementById("couponFieldId"),
+    couponFieldCode: document.getElementById("couponFieldCode"),
+    couponFieldType: document.getElementById("couponFieldType"),
+    couponFieldValue: document.getElementById("couponFieldValue"),
+    couponFieldExpires: document.getElementById("couponFieldExpires"),
+    couponFieldActive: document.getElementById("couponFieldActive"),
+    saveCouponBtn: document.getElementById("saveCouponBtn"),
+    deleteCouponBtn: document.getElementById("deleteCouponBtn"),
+    couponFormError: document.getElementById("couponFormError"),
 
     // pedidos
     ordersBadge: document.getElementById("ordersBadge"),
@@ -335,13 +360,15 @@
     loadProducts();
     loadOrders();
     loadBanners();
+    loadCoupons();
+    loadReviewsAdmin();
     loadSettings();
   }
 
   /* ---------------------------------------------------------------
      Pestañas (Productos / Pedidos / Banners)
      --------------------------------------------------------------- */
-  const tabPanels = { products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, settings: el.tabSettings, customers: el.tabCustomers };
+  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, settings: el.tabSettings, customers: el.tabCustomers };
   el.tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       el.tabButtons.forEach(b => b.classList.remove("active"));
@@ -532,6 +559,100 @@
     el.statOrdersTotalSum.textContent = money(allOrders.reduce((s, o) => s + (Number(o.total) || 0), 0));
     el.ordersBadge.textContent = newCount;
     el.ordersBadge.hidden = newCount === 0;
+    renderSummary();
+  }
+
+  /* ---------------------------------------------------------------
+     Resumen de ventas (tab nueva)
+     --------------------------------------------------------------- */
+  function isSameDay(a, b) { return a.toDateString() === b.toDateString(); }
+
+  function startOfWeek(d) {
+    const date = new Date(d);
+    const day = date.getDay(); // 0=domingo
+    const diff = day === 0 ? 6 : day - 1; // semana empieza lunes
+    date.setDate(date.getDate() - diff);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function renderSummary() {
+    const sumTodayEl = document.getElementById("sumToday");
+    if (!sumTodayEl) return;
+    const validOrders = allOrders.filter(o => o.status !== "cancelado");
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let today = 0, week = 0, month = 0, total = 0;
+    validOrders.forEach(o => {
+      const t = Number(o.total) || 0;
+      const created = new Date(o.created_at);
+      total += t;
+      if (created >= monthStart) month += t;
+      if (created >= weekStart) week += t;
+      if (isSameDay(created, now)) today += t;
+    });
+
+    document.getElementById("sumToday").textContent = money(today);
+    document.getElementById("sumWeek").textContent = money(week);
+    document.getElementById("sumMonth").textContent = money(month);
+    document.getElementById("sumTotal").textContent = money(total);
+
+    // Pedidos por estado
+    const STATUS_META = {
+      nuevo: { label: "Nuevo", color: "#D6336C" },
+      tomado: { label: "Pedido Tomado", color: "#E8A33D" },
+      entregado: { label: "Entregado", color: "#3f9d5f" },
+      cancelado: { label: "Cancelado", color: "#a3968d" },
+    };
+    const statusCounts = { nuevo: 0, tomado: 0, entregado: 0, cancelado: 0 };
+    allOrders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
+    const maxCount = Math.max(1, ...Object.values(statusCounts));
+    const statusBarsEl = document.getElementById("summaryStatusBars");
+    if (statusBarsEl) {
+      statusBarsEl.innerHTML = Object.entries(statusCounts).map(([key, count]) => `
+        <div class="status-bar-row">
+          <span class="status-bar-label">${STATUS_META[key].label}</span>
+          <div class="status-bar-track"><div class="status-bar-fill" style="width:${(count / maxCount) * 100}%; background:${STATUS_META[key].color}"></div></div>
+          <span class="status-bar-count">${count}</span>
+        </div>
+      `).join("");
+    }
+
+    // Productos más vendidos (por cantidad, sumando todos los pedidos no cancelados)
+    const qtyByProduct = {};
+    validOrders.forEach(o => {
+      (Array.isArray(o.items) ? o.items : []).forEach(item => {
+        const key = item.name || "Producto";
+        qtyByProduct[key] = (qtyByProduct[key] || 0) + (Number(item.qty) || 1);
+      });
+    });
+    const topProducts = Object.entries(qtyByProduct).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const topListEl = document.getElementById("summaryTopProducts");
+    if (topListEl) {
+      topListEl.innerHTML = topProducts.length
+        ? topProducts.map(([name, qty]) => `<li><span>${name}</span><strong>${qty} vendidos</strong></li>`).join("")
+        : `<li class="summary-empty">Todavía no hay ventas registradas</li>`;
+    }
+
+    // Últimos 5 pedidos
+    const recentEl = document.getElementById("summaryRecentOrders");
+    if (recentEl) {
+      const recent = allOrders.slice(0, 5);
+      recentEl.innerHTML = recent.length
+        ? recent.map(o => `
+            <div class="summary-recent-row">
+              <div>
+                <strong>${o.customer_name || "Cliente"}</strong>
+                <span class="summary-recent-date">${new Date(o.created_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" })}</span>
+              </div>
+              <span class="order-status-select ${o.status}" style="pointer-events:none;">${STATUS_META[o.status]?.label || o.status}</span>
+              <strong>${money(o.total)}</strong>
+            </div>
+          `).join("")
+        : `<p class="summary-empty">Todavía no hay pedidos</p>`;
+    }
   }
 
   function renderOrders() {
@@ -791,6 +912,7 @@
      BANNERS: cargar, listar, crear, editar, eliminar
      --------------------------------------------------------------- */
   let allBanners = [];
+  let allCoupons = [];
   let pendingBannerImageFile = null;
 
   async function loadBanners() {
@@ -962,6 +1084,242 @@
     } finally {
       el.saveBannerBtn.disabled = false;
       el.saveBannerBtn.textContent = "Guardar banner";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Cupones de descuento
+     --------------------------------------------------------------- */
+  async function loadCoupons() {
+    const { data, error } = await supabaseClient
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.warn("No se pudieron cargar los cupones:", error.message);
+      return;
+    }
+    allCoupons = data || [];
+    renderCouponsAdmin();
+  }
+
+  function renderCouponsAdmin() {
+    if (!allCoupons.length) {
+      el.couponsTableBody.innerHTML = "";
+      el.couponsEmpty.hidden = false;
+      return;
+    }
+    el.couponsEmpty.hidden = true;
+    const now = new Date();
+    el.couponsTableBody.innerHTML = allCoupons.map(c => {
+      const expired = c.expires_at && new Date(c.expires_at) < now;
+      const discountLabel = c.discount_type === "percent" ? `${c.discount_value}%` : money(c.discount_value);
+      const statusLabel = expired ? "Vencido" : (c.active ? "Activo" : "Inactivo");
+      const statusClass = expired ? "inactive" : (c.active ? "active" : "inactive");
+      return `
+        <tr data-coupon-id="${c.id}">
+          <td><strong>${c.code}</strong></td>
+          <td>${discountLabel}</td>
+          <td>${c.expires_at ? new Date(c.expires_at).toLocaleDateString("es-VE") : "—"}</td>
+          <td><span class="coupon-status ${statusClass}">${statusLabel}</span></td>
+          <td>
+            <button data-edit-coupon="${c.id}">Editar</button>
+            <button data-delete-coupon="${c.id}">Eliminar</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  el.couponsTableBody.addEventListener("click", async (e) => {
+    const editId = e.target.closest("[data-edit-coupon]")?.dataset.editCoupon;
+    const delId = e.target.closest("[data-delete-coupon]")?.dataset.deleteCoupon;
+    if (editId) openCouponModal(allCoupons.find(c => String(c.id) === String(editId)));
+    if (delId) {
+      if (!window.confirm("¿Eliminar este cupón?")) return;
+      const { error } = await supabaseClient.from("coupons").delete().eq("id", delId);
+      if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+      allCoupons = allCoupons.filter(c => String(c.id) !== String(delId));
+      renderCouponsAdmin();
+      showToast("Cupón eliminado");
+    }
+  });
+
+  function openCouponModal(coupon) {
+    el.couponFormError.hidden = true;
+    if (coupon) {
+      el.couponModalTitle.textContent = "Editar cupón";
+      el.couponFieldId.value = coupon.id;
+      el.couponFieldCode.value = coupon.code || "";
+      el.couponFieldType.value = coupon.discount_type || "percent";
+      el.couponFieldValue.value = coupon.discount_value ?? "";
+      el.couponFieldExpires.value = coupon.expires_at ? coupon.expires_at.slice(0, 10) : "";
+      el.couponFieldActive.checked = Boolean(coupon.active);
+      el.deleteCouponBtn.hidden = false;
+      el.deleteCouponBtn.onclick = async () => {
+        if (!window.confirm("¿Eliminar este cupón?")) return;
+        const { error } = await supabaseClient.from("coupons").delete().eq("id", coupon.id);
+        if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+        allCoupons = allCoupons.filter(c => String(c.id) !== String(coupon.id));
+        renderCouponsAdmin();
+        closeCouponModal();
+        showToast("Cupón eliminado");
+      };
+    } else {
+      el.couponModalTitle.textContent = "Nuevo cupón";
+      el.couponForm.reset();
+      el.couponFieldId.value = "";
+      el.couponFieldType.value = "percent";
+      el.couponFieldActive.checked = true;
+      el.deleteCouponBtn.hidden = true;
+    }
+    el.couponModalOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCouponModal() {
+    el.couponModalOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  el.newCouponBtn.addEventListener("click", () => openCouponModal(null));
+  el.couponModalClose.addEventListener("click", closeCouponModal);
+  el.cancelCouponBtn.addEventListener("click", closeCouponModal);
+  el.couponModalOverlay.addEventListener("click", e => { if (e.target === el.couponModalOverlay) closeCouponModal(); });
+
+  el.couponForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    el.couponFormError.hidden = true;
+    el.saveCouponBtn.disabled = true;
+    el.saveCouponBtn.textContent = "Guardando…";
+
+    try {
+      const value = parseFloat(el.couponFieldValue.value);
+      if (!value || value <= 0) throw new Error("El valor del descuento debe ser mayor a 0.");
+      const type = el.couponFieldType.value;
+      if (type === "percent" && value > 100) throw new Error("Un descuento en porcentaje no puede ser mayor a 100%.");
+
+      const payload = {
+        code: el.couponFieldCode.value.trim().toUpperCase(),
+        discount_type: type,
+        discount_value: value,
+        expires_at: el.couponFieldExpires.value ? new Date(el.couponFieldExpires.value + "T23:59:59").toISOString() : null,
+        active: el.couponFieldActive.checked,
+      };
+      const id = el.couponFieldId.value;
+      let error;
+      if (id) {
+        ({ error } = await supabaseClient.from("coupons").update(payload).eq("id", id));
+      } else {
+        ({ error } = await supabaseClient.from("coupons").insert(payload));
+      }
+      if (error) {
+        if (error.message.includes("duplicate") || error.message.includes("unique")) {
+          throw new Error("Ya existe un cupón con ese código.");
+        }
+        throw new Error(error.message);
+      }
+
+      showToast(id ? "Cupón actualizado" : "Cupón creado");
+      closeCouponModal();
+      await loadCoupons();
+    } catch (err) {
+      el.couponFormError.textContent = err.message;
+      el.couponFormError.hidden = false;
+    } finally {
+      el.saveCouponBtn.disabled = false;
+      el.saveCouponBtn.textContent = "Guardar cupón";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Reseñas de clientas (moderación)
+     --------------------------------------------------------------- */
+  let allReviews = [];
+
+  async function loadReviewsAdmin() {
+    const { data, error } = await supabaseClient
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.warn("No se pudieron cargar las reseñas:", error.message);
+      return;
+    }
+    allReviews = data || [];
+    renderReviewsAdmin();
+  }
+
+  function productNameById(id) {
+    const p = allProducts.find(pp => String(pp.id) === String(id));
+    return p ? p.name : `Producto #${id}`;
+  }
+
+  function renderReviewsAdmin() {
+    const pending = allReviews.filter(r => !r.approved).length;
+    const approved = allReviews.filter(r => r.approved).length;
+    el.statReviewsPending.textContent = pending;
+    el.statReviewsApproved.textContent = approved;
+    el.reviewsBadge.textContent = pending;
+    el.reviewsBadge.hidden = pending === 0;
+
+    if (!allReviews.length) {
+      el.reviewsAdminList.innerHTML = "";
+      el.reviewsAdminEmpty.hidden = false;
+      return;
+    }
+    el.reviewsAdminEmpty.hidden = true;
+    el.reviewsAdminList.innerHTML = allReviews.map(r => `
+      <div class="review-admin-card ${r.approved ? "" : "pending"}" data-review-id="${r.id}">
+        <div class="review-admin-head">
+          <div>
+            <strong>${r.customer_name}</strong>
+            <span class="review-admin-product"> — ${productNameById(r.product_id)}</span>
+          </div>
+          <span class="review-stars">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>
+        </div>
+        ${r.comment ? `<p class="review-admin-comment">${r.comment}</p>` : ""}
+        <div class="review-admin-footer">
+          <span class="review-date">${new Date(r.created_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" })}</span>
+          <div class="review-admin-actions">
+            ${r.approved
+              ? `<button data-unapprove-review="${r.id}">Ocultar</button>`
+              : `<button class="btn-primary-sm" data-approve-review="${r.id}">Aprobar</button>`}
+            <button data-delete-review="${r.id}">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  el.reviewsAdminList.addEventListener("click", async (e) => {
+    const approveId = e.target.closest("[data-approve-review]")?.dataset.approveReview;
+    const unapproveId = e.target.closest("[data-unapprove-review]")?.dataset.unapproveReview;
+    const delId = e.target.closest("[data-delete-review]")?.dataset.deleteReview;
+
+    if (approveId) {
+      const { error } = await supabaseClient.from("reviews").update({ approved: true }).eq("id", approveId);
+      if (error) { showToast("No se pudo aprobar: " + error.message, true); return; }
+      const r = allReviews.find(x => String(x.id) === String(approveId));
+      if (r) r.approved = true;
+      renderReviewsAdmin();
+      showToast("Reseña aprobada, ya se ve en el sitio");
+    }
+    if (unapproveId) {
+      const { error } = await supabaseClient.from("reviews").update({ approved: false }).eq("id", unapproveId);
+      if (error) { showToast("No se pudo ocultar: " + error.message, true); return; }
+      const r = allReviews.find(x => String(x.id) === String(unapproveId));
+      if (r) r.approved = false;
+      renderReviewsAdmin();
+      showToast("Reseña oculta del sitio");
+    }
+    if (delId) {
+      if (!window.confirm("¿Eliminar esta reseña? No se puede deshacer.")) return;
+      const { error } = await supabaseClient.from("reviews").delete().eq("id", delId);
+      if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+      allReviews = allReviews.filter(r => String(r.id) !== String(delId));
+      renderReviewsAdmin();
+      showToast("Reseña eliminada");
     }
   });
 
