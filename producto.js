@@ -224,6 +224,16 @@
     document.title = `${p.name} — Shopicol Bacano`;
     el.pageTitle.textContent = `${p.name} — Shopicol Bacano`;
     el.metaDescription.setAttribute("content", `${p.name} de ${p.brand}. Detal ${money(p.detal)} · Mayor ${money(p.mayor)}. Catálogo Shopicol Bacano.`);
+    const ogTitleTxt = `${p.name} — Shopicol Bacano`;
+    const ogDescTxt = `${p.name} de ${p.brand}. Detal ${money(p.detal)} · Mayor ${money(p.mayor)}.`;
+    document.getElementById("ogTitle")?.setAttribute("content", ogTitleTxt);
+    document.getElementById("ogDescription")?.setAttribute("content", ogDescTxt);
+    document.getElementById("twitterTitle")?.setAttribute("content", ogTitleTxt);
+    document.getElementById("twitterDescription")?.setAttribute("content", ogDescTxt);
+    if (p.image) {
+      document.getElementById("ogImage")?.setAttribute("content", p.image);
+      document.getElementById("twitterImage")?.setAttribute("content", p.image);
+    }
 
     el.modalStamp.hidden = avail;
     el.modalBrand.textContent = p.brand;
