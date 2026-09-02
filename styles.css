@@ -1037,13 +1037,37 @@ button, select, input{ font-family:inherit; }
 .checkout-tier-note.unlocked{ background:#e4f5e9; color:#227a45; }
 
 /* ============================= CHECKOUT ============================= */
-.checkout-card{ max-width:480px; display:block; }
-@media(min-width:600px){
-  .checkout-card{ grid-template-columns:1fr; max-height:none; }
+.checkout-card{
+  max-width:460px;
+  display:flex; flex-direction:column;
+  max-height:82vh;
+  overflow:hidden;
+  padding:26px 26px 0;
 }
-.checkout-sub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 20px; }
-.checkout-form{ display:flex; flex-direction:column; gap:14px; }
+.checkout-card h2{ margin:0 0 8px; padding-right:30px; }
+@media(min-width:600px){
+  .checkout-card{ max-height:82vh; }
+}
+.checkout-sub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 16px; }
+.checkout-form{ display:flex; flex-direction:column; flex:1; min-height:0; }
 .checkout-form[hidden]{ display:none; }
+.checkout-fields-scroll{
+  overflow-y:auto; flex:1; min-height:0;
+  display:flex; flex-direction:column; gap:14px;
+  padding:2px 4px 4px 2px; margin:0 -4px 0 -2px;
+}
+.checkout-form-footer{
+  flex-shrink:0;
+  padding:14px 0 24px;
+  border-top:1px solid var(--line);
+  margin-top:12px;
+}
+.btn-submit-order{
+  font-size:16.5px; font-weight:800;
+  padding:17px 20px;
+  border-radius:14px;
+  box-shadow:0 8px 20px rgba(214,51,108,.28);
+}
 .checkout-form label{ display:flex; flex-direction:column; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-soft); }
 .checkout-form input, .checkout-form select, .checkout-form textarea{
   border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;

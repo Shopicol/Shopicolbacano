@@ -275,66 +275,71 @@
     <p class="checkout-sub">Con estos datos armamos tu pedido y te contactamos por WhatsApp para confirmar.</p>
 
     <form id="checkoutForm" class="checkout-form">
-      <p class="checkout-tier-note" id="checkoutTierNote"></p>
+      <div class="checkout-fields-scroll">
+        <p class="checkout-tier-note" id="checkoutTierNote"></p>
+        <p class="checkout-upsell-note" id="checkoutUpsellNote" hidden></p>
 
-      <label>
-        <span>Nombre completo *</span>
-        <input type="text" id="custName" required placeholder="Ej: María Pérez">
-      </label>
-
-      <div class="form-row two">
         <label>
-          <span>Teléfono *</span>
-          <input type="tel" id="custPhone" required placeholder="Ej: 0412 1234567">
+          <span>Nombre completo *</span>
+          <input type="text" id="custName" required placeholder="Ej: María Pérez">
         </label>
+
+        <div class="form-row two">
+          <label>
+            <span>Teléfono *</span>
+            <input type="tel" id="custPhone" required placeholder="Ej: 0412 1234567">
+          </label>
+          <label>
+            <span>Ciudad *</span>
+            <input type="text" id="custCity" required placeholder="Ej: Caracas">
+          </label>
+        </div>
+
         <label>
-          <span>Ciudad *</span>
-          <input type="text" id="custCity" required placeholder="Ej: Caracas">
+          <span>Correo (opcional)</span>
+          <input type="email" id="custEmail" placeholder="Ej: maria@ejemplo.com">
+        </label>
+
+        <label>
+          <span>Método de pago *</span>
+          <select id="custPayment" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Pago móvil">Pago móvil</option>
+            <option value="Efectivo en Caracas">Efectivo en Caracas</option>
+            <option value="Binance">Binance</option>
+            <option value="Zelle">Zelle</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Método de entrega *</span>
+          <select id="custDelivery" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Delivery">Delivery</option>
+            <option value="Pickup en Caracas">Pickup en Caracas</option>
+            <option value="Envío nacional">Envío nacional (cobro a destino)</option>
+          </select>
+        </label>
+
+        <label id="addressField" hidden>
+          <span>Dirección de entrega *</span>
+          <textarea id="custAddress" rows="2" placeholder="Referencia, urbanización, calle, casa/apto…"></textarea>
+        </label>
+
+        <p class="pickup-note" id="pickupNote" hidden>
+          📍 Retira tu pedido en nuestro punto en Caracas — te compartimos la dirección exacta por WhatsApp al confirmar.
+        </p>
+
+        <label id="nationalNote" hidden>
+          <span>Nota para el envío nacional (opcional)</span>
+          <textarea id="custNote" rows="2" placeholder="Empresa de encomienda de tu preferencia, agencia, etc."></textarea>
         </label>
       </div>
 
-      <label>
-        <span>Correo (opcional)</span>
-        <input type="email" id="custEmail" placeholder="Ej: maria@ejemplo.com">
-      </label>
-
-      <label>
-        <span>Método de pago *</span>
-        <select id="custPayment" required>
-          <option value="">Selecciona una opción</option>
-          <option value="Pago móvil">Pago móvil</option>
-          <option value="Efectivo en Caracas">Efectivo en Caracas</option>
-          <option value="Binance">Binance</option>
-          <option value="Zelle">Zelle</option>
-        </select>
-      </label>
-
-      <label>
-        <span>Método de entrega *</span>
-        <select id="custDelivery" required>
-          <option value="">Selecciona una opción</option>
-          <option value="Delivery">Delivery</option>
-          <option value="Pickup en Caracas">Pickup en Caracas</option>
-          <option value="Envío nacional">Envío nacional (cobro a destino)</option>
-        </select>
-      </label>
-
-      <label id="addressField" hidden>
-        <span>Dirección de entrega *</span>
-        <textarea id="custAddress" rows="2" placeholder="Referencia, urbanización, calle, casa/apto…"></textarea>
-      </label>
-
-      <p class="pickup-note" id="pickupNote" hidden>
-        📍 Retira tu pedido en nuestro punto en Caracas — te compartimos la dirección exacta por WhatsApp al confirmar.
-      </p>
-
-      <label id="nationalNote" hidden>
-        <span>Nota para el envío nacional (opcional)</span>
-        <textarea id="custNote" rows="2" placeholder="Empresa de encomienda de tu preferencia, agencia, etc."></textarea>
-      </label>
-
-      <button type="submit" class="btn-primary btn-block" id="submitOrderBtn">Enviar pedido por WhatsApp</button>
-      <p class="form-error" id="checkoutError" hidden></p>
+      <div class="checkout-form-footer">
+        <p class="form-error" id="checkoutError" hidden></p>
+        <button type="submit" class="btn-primary btn-block btn-submit-order" id="submitOrderBtn">Enviar pedido por WhatsApp</button>
+      </div>
     </form>
 
     <div class="checkout-success" id="checkoutSuccess" hidden>

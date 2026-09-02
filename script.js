@@ -1147,7 +1147,8 @@
     document.body.style.overflow = "hidden";
   });
   el.checkoutClose.addEventListener("click", closeCheckout);
-  el.checkoutOverlay.addEventListener("click", e => { if (e.target === el.checkoutOverlay) closeCheckout(); });
+  // A propósito NO cerramos el checkout al hacer clic afuera — así el
+  // cliente no pierde los datos que ya escribió por un clic accidental.
   el.checkoutDoneBtn.addEventListener("click", () => {
     closeCheckout();
     resetCheckoutForm();
