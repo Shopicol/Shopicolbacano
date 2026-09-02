@@ -94,6 +94,26 @@
     tabBanners: document.getElementById("tabBanners"),
     tabCoupons: document.getElementById("tabCoupons"),
     tabReviews: document.getElementById("tabReviews"),
+    tabCollections: document.getElementById("tabCollections"),
+    collectionsAdminList: document.getElementById("collectionsAdminList"),
+    collectionsAdminEmpty: document.getElementById("collectionsAdminEmpty"),
+    newCollectionBtn: document.getElementById("newCollectionBtn"),
+    collectionModalOverlay: document.getElementById("collectionModalOverlay"),
+    collectionModalTitle: document.getElementById("collectionModalTitle"),
+    collectionModalClose: document.getElementById("collectionModalClose"),
+    cancelCollectionBtn: document.getElementById("cancelCollectionBtn"),
+    collectionForm: document.getElementById("collectionForm"),
+    collectionFieldId: document.getElementById("collectionFieldId"),
+    collectionFieldTitle: document.getElementById("collectionFieldTitle"),
+    collectionFieldOrder: document.getElementById("collectionFieldOrder"),
+    collectionFieldActive: document.getElementById("collectionFieldActive"),
+    collectionProductSearch: document.getElementById("collectionProductSearch"),
+    collectionSearchResults: document.getElementById("collectionSearchResults"),
+    collectionPickedList: document.getElementById("collectionPickedList"),
+    collectionPickedCount: document.getElementById("collectionPickedCount"),
+    saveCollectionBtn: document.getElementById("saveCollectionBtn"),
+    deleteCollectionBtn: document.getElementById("deleteCollectionBtn"),
+    collectionFormError: document.getElementById("collectionFormError"),
     reviewsAdminList: document.getElementById("reviewsAdminList"),
     reviewsAdminEmpty: document.getElementById("reviewsAdminEmpty"),
     statReviewsPending: document.getElementById("statReviewsPending"),
@@ -362,13 +382,14 @@
     loadBanners();
     loadCoupons();
     loadReviewsAdmin();
+    loadCollectionsAdmin();
     loadSettings();
   }
 
   /* ---------------------------------------------------------------
      Pestañas (Productos / Pedidos / Banners)
      --------------------------------------------------------------- */
-  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, settings: el.tabSettings, customers: el.tabCustomers };
+  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, collections: el.tabCollections, settings: el.tabSettings, customers: el.tabCustomers };
   el.tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       el.tabButtons.forEach(b => b.classList.remove("active"));
@@ -1320,6 +1341,214 @@
       allReviews = allReviews.filter(r => String(r.id) !== String(delId));
       renderReviewsAdmin();
       showToast("Reseña eliminada");
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Colecciones curadas (portada)
+     --------------------------------------------------------------- */
+  let allCollections = [];
+  let pickedProductIds = [];
+
+  async function loadCollectionsAdmin() {
+    const { data, error } = await supabaseClient
+      .from("collections")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) {
+      console.warn("No se pudieron cargar las colecciones:", error.message);
+      return;
+    }
+    allCollections = data || [];
+    renderCollectionsAdmin();
+  }
+
+  function renderCollectionsAdmin() {
+    if (!allCollections.length) {
+      el.collectionsAdminList.innerHTML = "";
+      el.collectionsAdminEmpty.hidden = false;
+      return;
+    }
+    el.collectionsAdminEmpty.hidden = true;
+    el.collectionsAdminList.innerHTML = allCollections.map(c => {
+      const ids = Array.isArray(c.product_ids) ? c.product_ids : [];
+      return `
+        <div class="collection-admin-card" data-collection-id="${c.id}">
+          <div>
+            <strong>${c.title}</strong>
+            <span class="collection-admin-meta">${ids.length} producto${ids.length === 1 ? "" : "s"} · orden ${c.sort_order ?? 0}</span>
+          </div>
+          <div class="collection-admin-actions">
+            <span class="coupon-status ${c.active ? "active" : "inactive"}">${c.active ? "Activa" : "Inactiva"}</span>
+            <button data-edit-collection="${c.id}">Editar</button>
+            <button data-delete-collection="${c.id}">Eliminar</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  el.collectionsAdminList.addEventListener("click", async (e) => {
+    const editId = e.target.closest("[data-edit-collection]")?.dataset.editCollection;
+    const delId = e.target.closest("[data-delete-collection]")?.dataset.deleteCollection;
+    if (editId) openCollectionModal(allCollections.find(c => String(c.id) === String(editId)));
+    if (delId) {
+      if (!window.confirm("¿Eliminar esta colección? El sitio dejará de mostrarla.")) return;
+      const { error } = await supabaseClient.from("collections").delete().eq("id", delId);
+      if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+      allCollections = allCollections.filter(c => String(c.id) !== String(delId));
+      renderCollectionsAdmin();
+      showToast("Colección eliminada");
+    }
+  });
+
+  function renderPickedList() {
+    el.collectionPickedCount.textContent = pickedProductIds.length;
+    if (!pickedProductIds.length) {
+      el.collectionPickedList.innerHTML = `<p class="collection-empty-hint">Todavía no has agregado productos.</p>`;
+      return;
+    }
+    el.collectionPickedList.innerHTML = pickedProductIds.map((id, idx) => {
+      const p = allProducts.find(pp => String(pp.id) === String(id));
+      const name = p ? p.name : `Producto #${id}`;
+      return `
+        <div class="collection-picked-item">
+          <span>${idx + 1}. ${name}</span>
+          <div class="collection-picked-item-actions">
+            <button type="button" data-move-up="${id}" ${idx === 0 ? "disabled" : ""} aria-label="Subir">↑</button>
+            <button type="button" data-move-down="${id}" ${idx === pickedProductIds.length - 1 ? "disabled" : ""} aria-label="Bajar">↓</button>
+            <button type="button" data-remove-picked="${id}" aria-label="Quitar">✕</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  el.collectionPickedList.addEventListener("click", (e) => {
+    const removeId = e.target.closest("[data-remove-picked]")?.dataset.removePicked;
+    const upId = e.target.closest("[data-move-up]")?.dataset.moveUp;
+    const downId = e.target.closest("[data-move-down]")?.dataset.moveDown;
+    if (removeId) {
+      pickedProductIds = pickedProductIds.filter(id => String(id) !== String(removeId));
+    } else if (upId) {
+      const idx = pickedProductIds.findIndex(id => String(id) === String(upId));
+      if (idx > 0) [pickedProductIds[idx - 1], pickedProductIds[idx]] = [pickedProductIds[idx], pickedProductIds[idx - 1]];
+    } else if (downId) {
+      const idx = pickedProductIds.findIndex(id => String(id) === String(downId));
+      if (idx < pickedProductIds.length - 1) [pickedProductIds[idx + 1], pickedProductIds[idx]] = [pickedProductIds[idx], pickedProductIds[idx + 1]];
+    }
+    renderPickedList();
+  });
+
+  el.collectionProductSearch.addEventListener("input", () => {
+    const q = el.collectionProductSearch.value.trim().toLowerCase();
+    if (!q) { el.collectionSearchResults.innerHTML = ""; el.collectionSearchResults.hidden = true; return; }
+    const matches = allProducts
+      .filter(p => !pickedProductIds.includes(String(p.id)) && p.name.toLowerCase().includes(q))
+      .slice(0, 8);
+    el.collectionSearchResults.hidden = matches.length === 0;
+    el.collectionSearchResults.innerHTML = matches.map(p => `
+      <button type="button" class="collection-search-result" data-add-product="${p.id}">
+        + ${p.name} <span class="collection-search-result-brand">${p.brand || ""}</span>
+      </button>
+    `).join("");
+  });
+
+  el.collectionSearchResults.addEventListener("click", (e) => {
+    const addId = e.target.closest("[data-add-product]")?.dataset.addProduct;
+    if (!addId) return;
+    if (!pickedProductIds.includes(String(addId))) pickedProductIds.push(String(addId));
+    renderPickedList();
+    el.collectionProductSearch.value = "";
+    el.collectionSearchResults.innerHTML = "";
+    el.collectionSearchResults.hidden = true;
+    el.collectionProductSearch.focus();
+  });
+
+  function openCollectionModal(collection) {
+    el.collectionFormError.hidden = true;
+    el.collectionProductSearch.value = "";
+    el.collectionSearchResults.innerHTML = "";
+    el.collectionSearchResults.hidden = true;
+
+    if (collection) {
+      el.collectionModalTitle.textContent = "Editar colección";
+      el.collectionFieldId.value = collection.id;
+      el.collectionFieldTitle.value = collection.title || "";
+      el.collectionFieldOrder.value = collection.sort_order ?? 0;
+      el.collectionFieldActive.checked = Boolean(collection.active);
+      pickedProductIds = Array.isArray(collection.product_ids) ? collection.product_ids.map(String) : [];
+      el.deleteCollectionBtn.hidden = false;
+      el.deleteCollectionBtn.onclick = async () => {
+        if (!window.confirm("¿Eliminar esta colección?")) return;
+        const { error } = await supabaseClient.from("collections").delete().eq("id", collection.id);
+        if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+        allCollections = allCollections.filter(c => String(c.id) !== String(collection.id));
+        renderCollectionsAdmin();
+        closeCollectionModal();
+        showToast("Colección eliminada");
+      };
+    } else {
+      el.collectionModalTitle.textContent = "Nueva colección";
+      el.collectionForm.reset();
+      el.collectionFieldId.value = "";
+      el.collectionFieldOrder.value = 0;
+      el.collectionFieldActive.checked = true;
+      pickedProductIds = [];
+      el.deleteCollectionBtn.hidden = true;
+    }
+    renderPickedList();
+    el.collectionModalOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCollectionModal() {
+    el.collectionModalOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  el.newCollectionBtn.addEventListener("click", () => openCollectionModal(null));
+  el.collectionModalClose.addEventListener("click", closeCollectionModal);
+  el.cancelCollectionBtn.addEventListener("click", closeCollectionModal);
+  el.collectionModalOverlay.addEventListener("click", e => { if (e.target === el.collectionModalOverlay) closeCollectionModal(); });
+
+  el.collectionForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    el.collectionFormError.hidden = true;
+
+    if (!pickedProductIds.length) {
+      el.collectionFormError.textContent = "Agrega al menos un producto a la colección.";
+      el.collectionFormError.hidden = false;
+      return;
+    }
+
+    el.saveCollectionBtn.disabled = true;
+    el.saveCollectionBtn.textContent = "Guardando…";
+    try {
+      const payload = {
+        title: el.collectionFieldTitle.value.trim(),
+        product_ids: pickedProductIds,
+        sort_order: parseInt(el.collectionFieldOrder.value, 10) || 0,
+        active: el.collectionFieldActive.checked,
+      };
+      const id = el.collectionFieldId.value;
+      let error;
+      if (id) {
+        ({ error } = await supabaseClient.from("collections").update(payload).eq("id", id));
+      } else {
+        ({ error } = await supabaseClient.from("collections").insert(payload));
+      }
+      if (error) throw new Error(error.message);
+
+      showToast(id ? "Colección actualizada" : "Colección creada");
+      closeCollectionModal();
+      await loadCollectionsAdmin();
+    } catch (err) {
+      el.collectionFormError.textContent = err.message;
+      el.collectionFormError.hidden = false;
+    } finally {
+      el.saveCollectionBtn.disabled = false;
+      el.saveCollectionBtn.textContent = "Guardar colección";
     }
   });
 
