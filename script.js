@@ -111,6 +111,10 @@
     // carrito
     favoritesBtn: document.getElementById("favoritesBtn"),
     favoritesCount: document.getElementById("favoritesCount"),
+    cartReminder: document.getElementById("cartReminder"),
+    cartReminderText: document.getElementById("cartReminderText"),
+    cartReminderResume: document.getElementById("cartReminderResume"),
+    cartReminderClose: document.getElementById("cartReminderClose"),
     cartBtn: document.getElementById("cartBtn"),
     cartCount: document.getElementById("cartCount"),
     cartOverlay: document.getElementById("cartOverlay"),
@@ -164,6 +168,7 @@
     recentScroll: document.getElementById("recentScroll"),
     featuredSection: document.getElementById("featuredSection"),
     featuredScroll: document.getElementById("featuredScroll"),
+    collectionsContainer: document.getElementById("collectionsContainer"),
   };
 
   /* ---------------------------------------------------------------
@@ -818,6 +823,7 @@
   // de piezas, sino por monto", tal como indica el catálogo original.
   const MAYOR_THRESHOLD = 50;
   let cart = loadCart();
+  const cartHadItemsOnLoad = Object.keys(cart).length > 0;
 
   // Las claves del carrito son el id del producto solo, o "id::Tono" cuando
   // el cliente eligió un tono específico — así cada tono queda como línea
@@ -1046,6 +1052,44 @@
   function closeCart() {
     el.cartOverlay.hidden = true;
     document.body.style.overflow = "";
+  }
+
+  /* ---------------------------------------------------------------
+     Recordatorio de carrito pendiente (Opción A: solo dentro del sitio)
+     --------------------------------------------------------------- */
+  const CART_REMINDER_DISMISS_KEY = "sb_cart_reminder_dismissed";
+
+  function maybeShowCartReminder() {
+    if (!el.cartReminder) return;
+    if (!cartHadItemsOnLoad) return; // solo si ya tenía productos ANTES de esta visita
+    if (cartCount() === 0) return; // por si ya lo vació justo al entrar
+    try {
+      if (sessionStorage.getItem(CART_REMINDER_DISMISS_KEY) === "1") return;
+    } catch (e) {}
+
+    const count = cartCount();
+    el.cartReminderText.textContent = count === 1
+      ? "Dejaste 1 producto en tu carrito la última vez. ¿Seguimos con tu pedido?"
+      : `Dejaste ${count} productos en tu carrito la última vez. ¿Seguimos con tu pedido?`;
+    el.cartReminder.hidden = false;
+  }
+
+  function hideCartReminder(remember) {
+    if (!el.cartReminder) return;
+    el.cartReminder.hidden = true;
+    if (remember) {
+      try { sessionStorage.setItem(CART_REMINDER_DISMISS_KEY, "1"); } catch (e) {}
+    }
+  }
+
+  if (el.cartReminderResume) {
+    el.cartReminderResume.addEventListener("click", () => {
+      hideCartReminder(true);
+      openCart();
+    });
+  }
+  if (el.cartReminderClose) {
+    el.cartReminderClose.addEventListener("click", () => hideCartReminder(true));
   }
 
   el.cartBtn.addEventListener("click", openCart);
@@ -1482,6 +1526,56 @@
   }
 
   /* ---------------------------------------------------------------
+     9.85 Colecciones curadas (armadas desde el panel de admin)
+     --------------------------------------------------------------- */
+  async function loadCollections() {
+    if (!SUPABASE_READY || !el.collectionsContainer) return;
+    try {
+      const { data, error } = await supabaseClient
+        .from("collections")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      renderCollections(data || []);
+    } catch (err) {
+      console.warn("No se pudieron cargar las colecciones:", err.message);
+    }
+  }
+
+  function renderCollections(collections) {
+    if (!collections.length) {
+      el.collectionsContainer.innerHTML = "";
+      return;
+    }
+    el.collectionsContainer.innerHTML = collections.map(col => {
+      const ids = Array.isArray(col.product_ids) ? col.product_ids.map(String) : [];
+      const products = ids
+        .map(id => PRODUCTS.find(p => String(p.id) === id))
+        .filter(p => p && isEffectivelyAvailable(p));
+      if (!products.length) return "";
+      return `
+        <section class="featured-section collection-section" data-collection-id="${col.id}">
+          <h2 class="featured-title">✦ ${escapeHtml(col.title)} ✦</h2>
+          <div class="featured-scroll" data-collection-scroll="${col.id}"><!-- filled below --></div>
+        </section>
+      `;
+    }).join("");
+
+    collections.forEach(col => {
+      const ids = Array.isArray(col.product_ids) ? col.product_ids.map(String) : [];
+      const products = ids
+        .map(id => PRODUCTS.find(p => String(p.id) === id))
+        .filter(p => p && isEffectivelyAvailable(p));
+      if (!products.length) return;
+      const scrollEl = el.collectionsContainer.querySelector(`[data-collection-scroll="${col.id}"]`);
+      if (!scrollEl) return;
+      scrollEl.innerHTML = products.map((p, i) => cardTemplate(p, i)).join("");
+      attachCardListeners(scrollEl);
+    });
+  }
+
+  /* ---------------------------------------------------------------
      9.9 Ajustes del sitio (logo, colores, textos, contacto)
      --------------------------------------------------------------- */
   function escapeHtml(str) {
@@ -1648,8 +1742,10 @@
     renderCartBadge();
     renderRecentSection();
     renderFeatured();
+    loadCollections();
     render();
     updateFavoritesUI();
+    maybeShowCartReminder();
     loadBanners();
     initSocialProof();
   }
