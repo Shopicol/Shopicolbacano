@@ -100,6 +100,18 @@
 
 <main id="top">
 
+  <!-- ============ RECORDATORIO DE CARRITO PENDIENTE ============ -->
+  <div class="cart-reminder" id="cartReminder" hidden>
+    <div class="cart-reminder-inner">
+      <span class="cart-reminder-icon">🛍️</span>
+      <p class="cart-reminder-text" id="cartReminderText"></p>
+      <div class="cart-reminder-actions">
+        <button class="cart-reminder-btn" id="cartReminderResume">Continuar pedido</button>
+        <button class="cart-reminder-close" id="cartReminderClose" aria-label="Cerrar">✕</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ HERO ============ -->
   <section class="hero">
     <div class="hero-inner">
@@ -126,6 +138,9 @@
     <h2 class="featured-title">✦ Destacados y en oferta ✦</h2>
     <div class="featured-scroll" id="featuredScroll"><!-- filled by JS --></div>
   </section>
+
+  <!-- ============ COLECCIONES CURADAS ============ -->
+  <div id="collectionsContainer"><!-- una .featured-section por colección, filled by JS --></div>
 
   <!-- ============ FILTER BAR ============ -->
   <section class="filter-bar" id="filterBar">
