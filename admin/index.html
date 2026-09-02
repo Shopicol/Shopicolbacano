@@ -459,6 +459,45 @@
         </div>
 
         <div class="settings-group">
+          <h3>✨ Oferta adicional en el checkout</h3>
+          <p class="settings-hint">Justo antes de que el cliente envíe su pedido por WhatsApp, le puede aparecer una ventanita ofreciendo agregar un producto extra por un monto pequeño (ej. "por $0.50 más, llévate una lámina de glitter preseleccionada"). Aquí decides si está activa y qué dice.</p>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settingsUpsellEnabled">
+              <span>Mostrar esta oferta en el checkout</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="grow">
+              <span>Título de la ventanita</span>
+              <input type="text" id="settingsUpsellTitle" placeholder="¡Bedazzled tu compra! ✨">
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="grow">
+              <span>Texto descriptivo</span>
+              <textarea id="settingsUpsellDescription" rows="2" placeholder="Por $0.50 más, agrega una lámina de glitter (piedritas preseleccionadas) a tu pedido."></textarea>
+            </label>
+          </div>
+          <div class="form-row two">
+            <label>
+              <span>Nombre del producto extra (aparece en el pedido)</span>
+              <input type="text" id="settingsUpsellProductName" placeholder="Lámina de glitter (preseleccionada)">
+            </label>
+            <label>
+              <span>Precio extra (USD)</span>
+              <input type="number" id="settingsUpsellPrice" step="0.01" min="0.01" placeholder="0.50">
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="grow">
+              <span>Texto del botón para aceptar</span>
+              <input type="text" id="settingsUpsellButtonText" placeholder="Sí, quiero agregarlo">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
           <h3>Contáctanos</h3>
           <p class="settings-hint">El WhatsApp se configura aparte, en el archivo config.js. Aquí solo agregas correo y redes.</p>
           <div class="form-row two">
