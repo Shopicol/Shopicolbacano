@@ -259,9 +259,10 @@
     // Footer: lista de marcas
     el.footerBrandsList.textContent = brands.join(" · ");
 
-    // Marquee decorativo (se repite 2 veces para el loop continuo)
+    // Marquee decorativo (se repite 2 veces para el loop continuo) — cada
+    // marca es clickeable y filtra el catálogo por esa marca.
     const marqueeItems = [...brands, ...brands]
-      .map(b => `<span>${b}</span>`)
+      .map(b => `<button type="button" class="marquee-brand" data-marquee-brand="${b}">${b}</button>`)
       .join("");
     el.marqueeTrack.innerHTML = marqueeItems;
   }
@@ -768,6 +769,16 @@
   el.brandSelect.addEventListener("change", () => {
     state.brand = el.brandSelect.value;
     render();
+  });
+
+  el.marqueeTrack.addEventListener("click", e => {
+    const btn = e.target.closest("[data-marquee-brand]");
+    if (!btn) return;
+    state.brand = btn.dataset.marqueeBrand;
+    state.category = "Todas";
+    el.brandSelect.value = state.brand;
+    render();
+    el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   el.sortSelect.addEventListener("change", () => {

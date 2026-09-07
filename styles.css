@@ -510,7 +510,7 @@ button, select, input{ font-family:inherit; }
   gap:0;
   animation:scroll-marquee 32s linear infinite;
 }
-.marquee-track span{
+.marquee-track span, .marquee-track .marquee-brand{
   font-family:var(--font-display);
   font-style:italic;
   font-size:19px;
@@ -520,8 +520,11 @@ button, select, input{ font-family:inherit; }
   align-items:center;
   gap:28px;
   opacity:.85;
+  border:none; background:none; cursor:pointer;
+  transition:color .15s, opacity .15s;
 }
-.marquee-track span::after{
+.marquee-track .marquee-brand:hover{ color:var(--pink); opacity:1; }
+.marquee-track span::after, .marquee-track .marquee-brand::after{
   content:"✦";
   font-style:normal;
   color:var(--pink);
