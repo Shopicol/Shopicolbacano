@@ -136,6 +136,7 @@
     paymentDetailsBox: document.getElementById("paymentDetailsBox"),
     cashPhotoField: document.getElementById("cashPhotoField"),
     cashPhotoLabel: document.getElementById("cashPhotoLabel"),
+    deliveryFeeNote: document.getElementById("deliveryFeeNote"),
     cashPhotoInput: document.getElementById("cashPhotoInput"),
     cashPhotoStatus: document.getElementById("cashPhotoStatus"),
     mayorProgress: document.getElementById("mayorProgress"),
@@ -1053,13 +1054,7 @@
       el.cartDiscountRow.hidden = true;
     }
     el.cartTotal.textContent = money(subtotal - discount);
-    const cartBs = formatBs(subtotal - discount);
-    if (cartBs) {
-      el.cartBsNote.textContent = `≈ ${cartBs} (tasa del día)`;
-      el.cartBsNote.hidden = false;
-    } else {
-      el.cartBsNote.hidden = true;
-    }
+    el.cartBsNote.hidden = true; // el monto en Bs solo se muestra dentro de Pago Móvil
     el.cartItems.innerHTML = items.map(item => `
       <div class="cart-line">
         <img src="${item.image}" alt="">
@@ -1167,20 +1162,25 @@
   function updatePaymentDetailsBox() {
     const val = el.custPayment.value;
     const s = siteSettings || {};
+    const previewTotal = computeOrderPreviewTotal();
     let html = "";
     if (val === "Pago móvil") {
+      const bsAmount = formatBs(previewTotal);
       html = `<strong>Datos para Pago Móvil</strong>
         <span>Teléfono: <b>${s.pago_movil_phone || "—"}</b></span>
         <span>Cédula/RIF: <b>${s.pago_movil_cedula || "—"}</b></span>
-        <span>Banco: <b>${s.pago_movil_bank || "—"}</b></span>`;
+        <span>Banco: <b>${s.pago_movil_bank || "—"}</b></span>
+        <span class="payment-amount-due">A pagar: <b>${bsAmount || "(te confirmamos el monto por WhatsApp)"}</b></span>`;
     } else if (val === "Binance") {
       html = `<strong>Datos para Binance</strong>
         <span>Correo / ID: <b>${s.binance_email || "—"}</b></span>
-        <span>Titular: <b>${s.binance_holder_name || "—"}</b></span>`;
+        <span>Titular: <b>${s.binance_holder_name || "—"}</b></span>
+        <span class="payment-amount-due">A pagar: <b>${money(previewTotal)}</b></span>`;
     } else if (val === "Zelle") {
       html = `<strong>Datos para Zelle</strong>
         <span>Correo: <b>${s.zelle_email || "—"}</b></span>
-        <span>Titular: <b>${s.zelle_holder_name || "—"}</b></span>`;
+        <span>Titular: <b>${s.zelle_holder_name || "—"}</b></span>
+        <span class="payment-amount-due">A pagar: <b>${money(previewTotal)}</b></span>`;
     }
     if (html) {
       el.paymentDetailsBox.innerHTML = html;
@@ -1293,6 +1293,7 @@
     el.checkoutForm.hidden = false;
     el.checkoutSuccess.hidden = true;
     el.addressField.hidden = true;
+    el.deliveryFeeNote.hidden = true;
     el.pickupNote.hidden = true;
     el.nationalNote.hidden = true;
     el.checkoutError.hidden = true;
@@ -1305,6 +1306,13 @@
   function closeCheckout() {
     el.checkoutOverlay.hidden = true;
     document.body.style.overflow = "";
+  }
+
+  function computeOrderPreviewTotal() {
+    const subtotal = cartTotal();
+    const discount = computeDiscount(subtotal);
+    const upsellPrice = (upsellAdded && siteSettings) ? Number(siteSettings.upsell_price) || 0 : 0;
+    return Math.max(0, subtotal - discount) + upsellPrice;
   }
 
   function proceedToCheckoutForm() {
@@ -1323,17 +1331,7 @@
       el.checkoutUpsellNote.hidden = true;
     }
 
-    const subtotal = cartTotal();
-    const discount = computeDiscount(subtotal);
-    const upsellPrice = (upsellAdded && siteSettings) ? Number(siteSettings.upsell_price) || 0 : 0;
-    const previewTotal = Math.max(0, subtotal - discount) + upsellPrice;
-    const bsText = formatBs(previewTotal);
-    if (bsText) {
-      el.checkoutBsNote.textContent = `≈ ${bsText} (a la tasa del día)`;
-      el.checkoutBsNote.hidden = false;
-    } else {
-      el.checkoutBsNote.hidden = true;
-    }
+    el.checkoutBsNote.hidden = true; // el monto en Bs solo se muestra dentro de Pago Móvil
 
     el.checkoutOverlay.hidden = false;
     document.body.style.overflow = "hidden";
@@ -1360,6 +1358,7 @@
     const val = el.custDelivery.value;
     el.addressField.hidden = val !== "Delivery";
     el.custAddress.required = val === "Delivery";
+    el.deliveryFeeNote.hidden = val !== "Delivery";
     el.pickupNote.hidden = val !== "Pickup en Caracas";
     el.nationalNote.hidden = val !== "Envío nacional";
   });
@@ -1451,8 +1450,10 @@
       lines.push(`Cupón (${order.coupon_code}): -${money(order.discount)}`);
     }
     lines.push(`Total: ${money(order.total)} (${unlockedMayor ? "Mayor" : "Detal"})`);
-    const bsLine = formatBs(order.total);
-    if (bsLine) lines.push(`Equivalente: ≈ ${bsLine} (tasa del día)`);
+    if (order.payment_method === "Pago móvil") {
+      const bsLine = formatBs(order.total);
+      if (bsLine) lines.push(`Monto a pagar: ${bsLine}`);
+    }
     lines.push("");
     lines.push(`Nombre: ${order.customer_name}`);
     lines.push(`Teléfono: ${order.phone}`);
