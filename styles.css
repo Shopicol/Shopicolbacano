@@ -1059,6 +1059,11 @@ button, select, input{ font-family:inherit; }
 .payment-details-box strong{ color:var(--ink); font-size:12.5px; margin-bottom:2px; }
 .payment-details-box b{ color:var(--pink-dark); }
 .payment-details-box[hidden]{ display:none; }
+.payment-amount-due{
+  margin-top:4px; padding-top:6px; border-top:1px dashed var(--line);
+  font-size:13px; color:var(--ink) !important;
+}
+.payment-amount-due b{ color:var(--pink); font-size:14px; }
 
 /* ---- oferta adicional (upsell) ---- */
 .upsell-card{
@@ -1124,7 +1129,12 @@ button, select, input{ font-family:inherit; }
   font-size:12.5px; color:#5c4419; margin:0;
 }
 .pickup-note[hidden]{ display:none; }
-#addressField[hidden], #nationalNote[hidden]{ display:none; }
+.delivery-fee-note{
+  background:var(--pink-pale); border-radius:10px; padding:10px 12px;
+  font-size:12.5px; color:var(--pink-dark); margin:0; font-weight:600;
+}
+.delivery-fee-note[hidden]{ display:none; }
+#addressField[hidden], #nationalNote[hidden], #deliveryFeeNote[hidden]{ display:none; }
 .checkout-success{ text-align:center; padding:20px 10px; }
 .checkout-success h3{ font-family:var(--font-display); font-size:22px; margin:10px 0; }
 .checkout-success p{ color:var(--ink-soft); font-size:14px; margin:0 0 20px; }
