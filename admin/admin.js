@@ -713,7 +713,7 @@
           </td>
           <td>${o.phone}</td>
           <td>${o.delivery_method}</td>
-          <td>${o.payment_method}</td>
+          <td>${o.payment_method}${o.cash_photo_url ? ` <span class="order-proof-badge" title="Tiene comprobante de pago adjunto">📎</span>` : ""}</td>
           <td>${money(o.total)}</td>
           <td>
             <select class="order-status-select ${o.status}" data-order-status="${o.id}">
@@ -778,6 +778,15 @@
       <div class="order-detail-row"><span>Entrega</span><strong>${order.delivery_method}</strong></div>
       ${order.address ? `<div class="order-detail-row"><span>Dirección</span><strong>${order.address}</strong></div>` : ""}
       ${order.note ? `<div class="order-detail-row"><span>Nota</span><strong>${order.note}</strong></div>` : ""}
+      ${order.cash_photo_url ? `
+        <div class="order-payment-proof">
+          <span>Comprobante de pago</span>
+          <a href="${order.cash_photo_url}" target="_blank" rel="noopener">
+            <img src="${order.cash_photo_url}" alt="Comprobante de pago" loading="lazy">
+            <span class="order-payment-proof-link">Ver en tamaño completo ↗</span>
+          </a>
+        </div>
+      ` : ""}
       <div class="order-items-list">
         ${items.map(it => `<div class="order-item-line"><span>${it.qty}x ${it.name}</span><span>${money(it.price * it.qty)}</span></div>`).join("")}
       </div>

@@ -339,6 +339,17 @@ small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; fon
 .order-modal-card{ max-width:520px; }
 .order-detail-row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
 .order-detail-row span:first-child{ color:var(--ink-soft); }
+.order-payment-proof{
+  padding:12px 0; border-bottom:1px solid var(--line);
+}
+.order-payment-proof > span{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:8px; }
+.order-payment-proof a{ display:block; text-decoration:none; }
+.order-payment-proof img{
+  width:100%; max-width:240px; border-radius:10px; border:1px solid var(--line);
+  display:block; margin-bottom:6px; cursor:zoom-in;
+}
+.order-payment-proof-link{ font-size:12px; color:var(--pink); font-weight:600; }
+.order-proof-badge{ font-size:13px; }
 .order-items-list{ margin:14px 0; border-top:1.5px solid var(--line); padding-top:10px; }
 .order-item-line{ display:flex; justify-content:space-between; font-size:13px; padding:6px 0; }
 .order-total-line{ display:flex; justify-content:space-between; font-weight:700; font-size:16px; margin-top:10px; padding-top:10px; border-top:1.5px solid var(--line); }

@@ -1191,7 +1191,7 @@
 
     // Pide comprobante en efectivo (foto de los billetes), Binance y
     // Zelle (captura de la transferencia) — pero no en Pago Móvil.
-    const needsPhoto = val === "Efectivo en Caracas" || val === "Binance" || val === "Zelle";
+    const needsPhoto = Boolean(val); // ahora se pide en las 4 formas de pago
     el.cashPhotoField.hidden = !needsPhoto;
     if (needsPhoto) {
       el.cashPhotoLabel.textContent = val === "Efectivo en Caracas"
@@ -1214,8 +1214,10 @@
       if (!file) return;
       cashPhotoUrl = null;
       el.cashPhotoStatus.textContent = "Subiendo foto…";
+      el.submitOrderBtn.disabled = true; // bloquea "Enviar" hasta que termine de subir
       if (!SUPABASE_READY) {
         el.cashPhotoStatus.textContent = "No se pudo subir (no disponible en este momento).";
+        el.submitOrderBtn.disabled = false;
         return;
       }
       try {
@@ -1229,6 +1231,8 @@
       } catch (err) {
         el.cashPhotoStatus.textContent = "No se pudo subir la foto. Intenta de nuevo.";
         console.warn("Error subiendo foto de efectivo:", err);
+      } finally {
+        el.submitOrderBtn.disabled = false;
       }
     });
   }
@@ -1372,7 +1376,7 @@
     }
 
     const paymentVal = el.custPayment.value;
-    const photoRequired = paymentVal === "Efectivo en Caracas" || paymentVal === "Binance" || paymentVal === "Zelle";
+    const photoRequired = Boolean(paymentVal);
     if (photoRequired && !cashPhotoUrl) {
       el.checkoutError.textContent = paymentVal === "Efectivo en Caracas"
         ? "Sube la foto de los billetes antes de continuar."
