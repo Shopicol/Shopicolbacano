@@ -1039,6 +1039,44 @@ button, select, input{ font-family:inherit; }
 }
 .checkout-tier-note.unlocked{ background:#e4f5e9; color:#227a45; }
 
+.checkout-upsell-note{
+  background:var(--pink-pale); border-radius:10px; padding:9px 12px;
+  font-size:12.5px; color:var(--pink-dark); margin:0 0 4px; font-weight:600;
+}
+.checkout-upsell-note[hidden]{ display:none; }
+
+.checkout-bs-note, .cart-bs-note{
+  font-size:12px; color:var(--ink-soft); margin:0 0 10px; text-align:right;
+}
+.cart-bs-note{ margin:-8px 0 14px; }
+.checkout-bs-note[hidden], .cart-bs-note[hidden]{ display:none; }
+
+.payment-details-box{
+  background:var(--cream-deep); border-radius:12px; padding:12px 14px;
+  display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--ink-soft);
+  margin:-4px 0 4px;
+}
+.payment-details-box strong{ color:var(--ink); font-size:12.5px; margin-bottom:2px; }
+.payment-details-box b{ color:var(--pink-dark); }
+.payment-details-box[hidden]{ display:none; }
+
+/* ---- oferta adicional (upsell) ---- */
+.upsell-card{
+  max-width:400px; text-align:center; padding:36px 32px 30px;
+}
+.upsell-emoji{ font-size:40px; margin-bottom:6px; }
+.upsell-card h2{
+  font-family:var(--font-display); font-size:22px; color:var(--ink); margin:0 0 10px;
+}
+.upsell-description{
+  font-size:14px; color:var(--ink-soft); line-height:1.5; margin:0 0 22px;
+}
+.upsell-decline{
+  display:block; width:100%; background:none; border:none;
+  font-size:13px; color:var(--ink-soft); margin-top:12px; cursor:pointer; text-decoration:underline;
+}
+.upsell-decline:hover{ color:var(--ink); }
+
 /* ============================= CHECKOUT ============================= */
 .checkout-card{
   max-width:460px;
@@ -1072,6 +1110,7 @@ button, select, input{ font-family:inherit; }
   box-shadow:0 8px 20px rgba(214,51,108,.28);
 }
 .checkout-form label{ display:flex; flex-direction:column; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+.checkout-form label[hidden]{ display:none; }
 .checkout-form input, .checkout-form select, .checkout-form textarea{
   border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
   background:var(--cream); color:var(--ink); outline:none; font-size:13.5px;

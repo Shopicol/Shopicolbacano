@@ -262,9 +262,22 @@
         <span>Total (<span id="cartPriceModeLabel">Detal</span>)</span>
         <strong id="cartTotal">$0</strong>
       </div>
+      <p class="cart-bs-note" id="cartBsNote" hidden></p>
       <button class="btn-primary btn-block" id="checkoutBtn">Continuar pedido</button>
     </div>
   </aside>
+</div>
+
+<!-- ============ OFERTA ADICIONAL (upsell antes del checkout) ============ -->
+<div class="modal-overlay" id="upsellOverlay" hidden>
+  <div class="modal-card upsell-card">
+    <button class="modal-close" id="upsellClose" aria-label="Cerrar">✕</button>
+    <div class="upsell-emoji">✨</div>
+    <h2 id="upsellTitle">¡Bedazzled tu compra! ✨</h2>
+    <p class="upsell-description" id="upsellDescription"></p>
+    <button class="btn-primary btn-block" id="upsellAcceptBtn"></button>
+    <button class="upsell-decline" id="upsellDeclineBtn">No, gracias</button>
+  </div>
 </div>
 
 <!-- ============ CHECKOUT: datos del cliente ============ -->
@@ -278,6 +291,7 @@
       <div class="checkout-fields-scroll">
         <p class="checkout-tier-note" id="checkoutTierNote"></p>
         <p class="checkout-upsell-note" id="checkoutUpsellNote" hidden></p>
+        <p class="checkout-bs-note" id="checkoutBsNote" hidden></p>
 
         <label>
           <span>Nombre completo *</span>
@@ -309,6 +323,14 @@
             <option value="Binance">Binance</option>
             <option value="Zelle">Zelle</option>
           </select>
+        </label>
+
+        <div class="payment-details-box" id="paymentDetailsBox" hidden></div>
+
+        <label id="cashPhotoField" hidden>
+          <span id="cashPhotoLabel">Foto del comprobante de pago *</span>
+          <input type="file" id="cashPhotoInput" accept="image/*">
+          <small id="cashPhotoStatus"></small>
         </label>
 
         <label>

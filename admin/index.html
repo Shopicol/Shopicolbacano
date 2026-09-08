@@ -449,6 +449,65 @@
         </div>
 
         <div class="settings-group">
+          <h3>💱 Tasa del dólar</h3>
+          <p class="settings-hint">La usas tú mismo para actualizarla cuando quieras — el sitio la multiplica por el total del pedido para mostrarle al cliente el equivalente en bolívares.</p>
+          <div class="form-row two">
+            <label>
+              <span>Tasa (Bs por $1)</span>
+              <input type="number" id="settingsExchangeRate" step="0.01" min="0" placeholder="Ej: 145.30">
+            </label>
+            <label>
+              <span>Última actualización</span>
+              <input type="text" id="settingsExchangeRateUpdated" disabled placeholder="Se actualiza sola al guardar">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>💳 Datos de pago</h3>
+          <p class="settings-hint">Se le muestran al cliente en el checkout según el método de pago que elija.</p>
+          <p class="settings-hint" style="margin-top:-8px;"><strong>Pago Móvil</strong></p>
+          <div class="form-row two">
+            <label>
+              <span>Teléfono</span>
+              <input type="text" id="settingsPagoMovilPhone" placeholder="Ej: 0412 1234567">
+            </label>
+            <label>
+              <span>Cédula/RIF</span>
+              <input type="text" id="settingsPagoMovilCedula" placeholder="Ej: V-12345678">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Banco</span>
+              <input type="text" id="settingsPagoMovilBank" placeholder="Ej: Banesco">
+            </label>
+          </div>
+          <p class="settings-hint" style="margin-top:6px;"><strong>Binance</strong></p>
+          <div class="form-row two">
+            <label>
+              <span>Correo / ID de Binance Pay</span>
+              <input type="text" id="settingsBinanceEmail" placeholder="Ej: tucuenta@binance.com">
+            </label>
+            <label>
+              <span>Nombre del titular</span>
+              <input type="text" id="settingsBinanceHolder" placeholder="Ej: Shopicol Bacano">
+            </label>
+          </div>
+          <p class="settings-hint" style="margin-top:6px;"><strong>Zelle</strong></p>
+          <div class="form-row two">
+            <label>
+              <span>Correo de Zelle</span>
+              <input type="text" id="settingsZelleEmail" placeholder="Ej: tucuenta@correo.com">
+            </label>
+            <label>
+              <span>Nombre del titular</span>
+              <input type="text" id="settingsZelleHolder" placeholder="Ej: Shopicol Bacano">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
           <h3>SEO / buscadores</h3>
           <div class="form-row">
             <label>

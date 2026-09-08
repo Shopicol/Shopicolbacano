@@ -77,6 +77,21 @@ const DEFAULT_SETTINGS = {
   instagram_url: "",
   tiktok_url: "",
   facebook_url: "",
+  upsell_enabled: false,
+  upsell_price: 0.5,
+  upsell_title: "¡Bedazzled tu compra! ✨",
+  upsell_description: "Por $0.50 más, agrega una lámina de glitter (piedritas preseleccionadas) a tu pedido.",
+  upsell_product_name: "Lámina de glitter (preseleccionada)",
+  upsell_button_text: "Sí, quiero agregarlo",
+  exchange_rate: 0,
+  exchange_rate_updated_at: null,
+  pago_movil_phone: "",
+  pago_movil_cedula: "",
+  pago_movil_bank: "",
+  binance_email: "",
+  binance_holder_name: "",
+  zelle_email: "",
+  zelle_holder_name: "",
 };
 
 /* Combinaciones de tipografía disponibles para elegir en Ajustes.

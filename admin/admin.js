@@ -214,6 +214,21 @@
     settingsInstagram: document.getElementById("settingsInstagram"),
     settingsTiktok: document.getElementById("settingsTiktok"),
     settingsFacebook: document.getElementById("settingsFacebook"),
+    settingsUpsellEnabled: document.getElementById("settingsUpsellEnabled"),
+    settingsUpsellTitle: document.getElementById("settingsUpsellTitle"),
+    settingsUpsellDescription: document.getElementById("settingsUpsellDescription"),
+    settingsUpsellProductName: document.getElementById("settingsUpsellProductName"),
+    settingsUpsellPrice: document.getElementById("settingsUpsellPrice"),
+    settingsUpsellButtonText: document.getElementById("settingsUpsellButtonText"),
+    settingsExchangeRate: document.getElementById("settingsExchangeRate"),
+    settingsExchangeRateUpdated: document.getElementById("settingsExchangeRateUpdated"),
+    settingsPagoMovilPhone: document.getElementById("settingsPagoMovilPhone"),
+    settingsPagoMovilCedula: document.getElementById("settingsPagoMovilCedula"),
+    settingsPagoMovilBank: document.getElementById("settingsPagoMovilBank"),
+    settingsBinanceEmail: document.getElementById("settingsBinanceEmail"),
+    settingsBinanceHolder: document.getElementById("settingsBinanceHolder"),
+    settingsZelleEmail: document.getElementById("settingsZelleEmail"),
+    settingsZelleHolder: document.getElementById("settingsZelleHolder"),
     saveSettingsBtn: document.getElementById("saveSettingsBtn"),
     settingsFormError: document.getElementById("settingsFormError"),
   };
@@ -1739,8 +1754,19 @@
     logo_url: "", primary_color: "#D6336C", accent_color: "#E8A33D",
     bg_color: "#FBF6EC", text_color: "#2B1B17", font_pair: "clasica", card_radius: 18,
     contact_email: "", instagram_url: "", tiktok_url: "", facebook_url: "",
+    upsell_enabled: false, upsell_price: 0.5,
+    upsell_title: "¡Bedazzled tu compra! ✨",
+    upsell_description: "Por $0.50 más, agrega una lámina de glitter (piedritas preseleccionadas) a tu pedido.",
+    upsell_product_name: "Lámina de glitter (preseleccionada)",
+    upsell_button_text: "Sí, quiero agregarlo",
+    exchange_rate: 0, exchange_rate_updated_at: null,
+    pago_movil_phone: "", pago_movil_cedula: "", pago_movil_bank: "",
+    binance_email: "", binance_holder_name: "",
+    zelle_email: "", zelle_holder_name: "",
   };
   let pendingLogoFile = null;
+  let loadedExchangeRate = 0;
+  let loadedExchangeRateUpdatedAt = null;
 
   async function loadSettings() {
     const { data, error } = await supabaseClient
@@ -1777,6 +1803,25 @@
     el.settingsInstagram.value = settings.instagram_url || "";
     el.settingsTiktok.value = settings.tiktok_url || "";
     el.settingsFacebook.value = settings.facebook_url || "";
+    el.settingsUpsellEnabled.checked = Boolean(settings.upsell_enabled);
+    el.settingsUpsellTitle.value = settings.upsell_title || "";
+    el.settingsUpsellDescription.value = settings.upsell_description || "";
+    el.settingsUpsellProductName.value = settings.upsell_product_name || "";
+    el.settingsUpsellPrice.value = settings.upsell_price ?? 0.5;
+    el.settingsUpsellButtonText.value = settings.upsell_button_text || "";
+    el.settingsExchangeRate.value = settings.exchange_rate || "";
+    loadedExchangeRate = settings.exchange_rate || 0;
+    loadedExchangeRateUpdatedAt = settings.exchange_rate_updated_at || null;
+    el.settingsExchangeRateUpdated.value = settings.exchange_rate_updated_at
+      ? new Date(settings.exchange_rate_updated_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" })
+      : "Todavía no se ha puesto una tasa";
+    el.settingsPagoMovilPhone.value = settings.pago_movil_phone || "";
+    el.settingsPagoMovilCedula.value = settings.pago_movil_cedula || "";
+    el.settingsPagoMovilBank.value = settings.pago_movil_bank || "";
+    el.settingsBinanceEmail.value = settings.binance_email || "";
+    el.settingsBinanceHolder.value = settings.binance_holder_name || "";
+    el.settingsZelleEmail.value = settings.zelle_email || "";
+    el.settingsZelleHolder.value = settings.zelle_holder_name || "";
     el.settingsLogoUrl.value = settings.logo_url || "";
     if (settings.logo_url) {
       el.settingsLogoPreview.src = settings.logo_url;
@@ -1860,12 +1905,34 @@
         instagram_url: el.settingsInstagram.value.trim(),
         tiktok_url: el.settingsTiktok.value.trim(),
         facebook_url: el.settingsFacebook.value.trim(),
+        upsell_enabled: el.settingsUpsellEnabled.checked,
+        upsell_title: el.settingsUpsellTitle.value.trim(),
+        upsell_description: el.settingsUpsellDescription.value.trim(),
+        upsell_product_name: el.settingsUpsellProductName.value.trim(),
+        upsell_price: parseFloat(el.settingsUpsellPrice.value) || 0.5,
+        upsell_button_text: el.settingsUpsellButtonText.value.trim(),
+        exchange_rate: parseFloat(el.settingsExchangeRate.value) || 0,
+        exchange_rate_updated_at: (parseFloat(el.settingsExchangeRate.value) || 0) !== Number(loadedExchangeRate)
+          ? new Date().toISOString()
+          : loadedExchangeRateUpdatedAt,
+        pago_movil_phone: el.settingsPagoMovilPhone.value.trim(),
+        pago_movil_cedula: el.settingsPagoMovilCedula.value.trim(),
+        pago_movil_bank: el.settingsPagoMovilBank.value.trim(),
+        binance_email: el.settingsBinanceEmail.value.trim(),
+        binance_holder_name: el.settingsBinanceHolder.value.trim(),
+        zelle_email: el.settingsZelleEmail.value.trim(),
+        zelle_holder_name: el.settingsZelleHolder.value.trim(),
       };
 
       const { error } = await supabaseClient.from("site_settings").upsert(payload);
       if (error) throw new Error(error.message);
 
       showToast("Ajustes guardados. Recarga tu sitio público para verlos aplicados.");
+      loadedExchangeRate = payload.exchange_rate;
+      loadedExchangeRateUpdatedAt = payload.exchange_rate_updated_at;
+      el.settingsExchangeRateUpdated.value = payload.exchange_rate_updated_at
+        ? new Date(payload.exchange_rate_updated_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" })
+        : "Todavía no se ha puesto una tasa";
       pendingLogoFile = null;
     } catch (err) {
       el.settingsFormError.textContent = err.message;

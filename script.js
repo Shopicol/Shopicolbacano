@@ -124,6 +124,20 @@
     cartFooter: document.getElementById("cartFooter"),
     cartPriceModeLabel: document.getElementById("cartPriceModeLabel"),
     cartTotal: document.getElementById("cartTotal"),
+    cartBsNote: document.getElementById("cartBsNote"),
+    upsellOverlay: document.getElementById("upsellOverlay"),
+    upsellTitle: document.getElementById("upsellTitle"),
+    upsellDescription: document.getElementById("upsellDescription"),
+    upsellAcceptBtn: document.getElementById("upsellAcceptBtn"),
+    upsellDeclineBtn: document.getElementById("upsellDeclineBtn"),
+    upsellClose: document.getElementById("upsellClose"),
+    checkoutUpsellNote: document.getElementById("checkoutUpsellNote"),
+    checkoutBsNote: document.getElementById("checkoutBsNote"),
+    paymentDetailsBox: document.getElementById("paymentDetailsBox"),
+    cashPhotoField: document.getElementById("cashPhotoField"),
+    cashPhotoLabel: document.getElementById("cashPhotoLabel"),
+    cashPhotoInput: document.getElementById("cashPhotoInput"),
+    cashPhotoStatus: document.getElementById("cashPhotoStatus"),
     mayorProgress: document.getElementById("mayorProgress"),
     mayorProgressFill: document.getElementById("mayorProgressFill"),
     mayorProgressText: document.getElementById("mayorProgressText"),
@@ -835,6 +849,9 @@
   const MAYOR_THRESHOLD = 50;
   let cart = loadCart();
   const cartHadItemsOnLoad = Object.keys(cart).length > 0;
+  let siteSettings = null;
+  let upsellAdded = false; // se agregó el producto extra ofrecido en la ventanita
+  let cashPhotoUrl = null; // link de la foto de billetes subida (si pagó en efectivo)
 
   // Las claves del carrito son el id del producto solo, o "id::Tono" cuando
   // el cliente eligió un tono específico — así cada tono queda como línea
@@ -1036,6 +1053,13 @@
       el.cartDiscountRow.hidden = true;
     }
     el.cartTotal.textContent = money(subtotal - discount);
+    const cartBs = formatBs(subtotal - discount);
+    if (cartBs) {
+      el.cartBsNote.textContent = `≈ ${cartBs} (tasa del día)`;
+      el.cartBsNote.hidden = false;
+    } else {
+      el.cartBsNote.hidden = true;
+    }
     el.cartItems.innerHTML = items.map(item => `
       <div class="cart-line">
         <img src="${item.image}" alt="">
@@ -1128,6 +1152,136 @@
   });
 
   /* ---------------------------------------------------------------
+     Conversión a bolívares (tasa que el equipo actualiza a mano)
+     --------------------------------------------------------------- */
+  function formatBs(amountUsd) {
+    const rate = Number(siteSettings && siteSettings.exchange_rate) || 0;
+    if (!rate || !amountUsd) return null;
+    const bs = amountUsd * rate;
+    return "Bs " + bs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /* ---------------------------------------------------------------
+     Datos de pago según el método elegido + foto de efectivo
+     --------------------------------------------------------------- */
+  function updatePaymentDetailsBox() {
+    const val = el.custPayment.value;
+    const s = siteSettings || {};
+    let html = "";
+    if (val === "Pago móvil") {
+      html = `<strong>Datos para Pago Móvil</strong>
+        <span>Teléfono: <b>${s.pago_movil_phone || "—"}</b></span>
+        <span>Cédula/RIF: <b>${s.pago_movil_cedula || "—"}</b></span>
+        <span>Banco: <b>${s.pago_movil_bank || "—"}</b></span>`;
+    } else if (val === "Binance") {
+      html = `<strong>Datos para Binance</strong>
+        <span>Correo / ID: <b>${s.binance_email || "—"}</b></span>
+        <span>Titular: <b>${s.binance_holder_name || "—"}</b></span>`;
+    } else if (val === "Zelle") {
+      html = `<strong>Datos para Zelle</strong>
+        <span>Correo: <b>${s.zelle_email || "—"}</b></span>
+        <span>Titular: <b>${s.zelle_holder_name || "—"}</b></span>`;
+    }
+    if (html) {
+      el.paymentDetailsBox.innerHTML = html;
+      el.paymentDetailsBox.hidden = false;
+    } else {
+      el.paymentDetailsBox.hidden = true;
+    }
+
+    // Pide comprobante en efectivo (foto de los billetes), Binance y
+    // Zelle (captura de la transferencia) — pero no en Pago Móvil.
+    const needsPhoto = val === "Efectivo en Caracas" || val === "Binance" || val === "Zelle";
+    el.cashPhotoField.hidden = !needsPhoto;
+    if (needsPhoto) {
+      el.cashPhotoLabel.textContent = val === "Efectivo en Caracas"
+        ? "Foto de los billetes (para confirmar el monto) *"
+        : "Foto o captura del comprobante de pago *";
+    } else {
+      cashPhotoUrl = null;
+      el.cashPhotoInput.value = "";
+      el.cashPhotoStatus.textContent = "";
+    }
+  }
+
+  if (el.custPayment) {
+    el.custPayment.addEventListener("change", updatePaymentDetailsBox);
+  }
+
+  if (el.cashPhotoInput) {
+    el.cashPhotoInput.addEventListener("change", async () => {
+      const file = el.cashPhotoInput.files[0];
+      if (!file) return;
+      cashPhotoUrl = null;
+      el.cashPhotoStatus.textContent = "Subiendo foto…";
+      if (!SUPABASE_READY) {
+        el.cashPhotoStatus.textContent = "No se pudo subir (no disponible en este momento).";
+        return;
+      }
+      try {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `cash-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabaseClient.storage.from("payment-proofs").upload(path, file, { upsert: false });
+        if (error) throw error;
+        const { data } = supabaseClient.storage.from("payment-proofs").getPublicUrl(path);
+        cashPhotoUrl = data.publicUrl;
+        el.cashPhotoStatus.textContent = "✓ Foto subida correctamente.";
+      } catch (err) {
+        el.cashPhotoStatus.textContent = "No se pudo subir la foto. Intenta de nuevo.";
+        console.warn("Error subiendo foto de efectivo:", err);
+      }
+    });
+  }
+
+  /* ---------------------------------------------------------------
+     Oferta adicional (upsell) — se muestra antes del checkout
+     --------------------------------------------------------------- */
+  function shouldShowUpsell() {
+    return Boolean(
+      siteSettings &&
+      siteSettings.upsell_enabled &&
+      siteSettings.upsell_product_name &&
+      Number(siteSettings.upsell_price) > 0 &&
+      !upsellAdded
+    );
+  }
+
+  function openUpsellModal() {
+    const price = Number(siteSettings.upsell_price) || 0;
+    el.upsellTitle.textContent = siteSettings.upsell_title || "¡Bedazzled tu compra! ✨";
+    el.upsellDescription.textContent = siteSettings.upsell_description || "";
+    el.upsellAcceptBtn.textContent = siteSettings.upsell_button_text || `Sí, quiero agregarlo (+${money(price)})`;
+    el.upsellOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeUpsellModal() {
+    el.upsellOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  if (el.upsellAcceptBtn) {
+    el.upsellAcceptBtn.addEventListener("click", () => {
+      upsellAdded = true;
+      trackEvent("upsell_accept", { value: siteSettings.upsell_price });
+      closeUpsellModal();
+      proceedToCheckoutForm();
+    });
+  }
+  if (el.upsellDeclineBtn) {
+    el.upsellDeclineBtn.addEventListener("click", () => {
+      closeUpsellModal();
+      proceedToCheckoutForm();
+    });
+  }
+  if (el.upsellClose) {
+    el.upsellClose.addEventListener("click", () => {
+      closeUpsellModal();
+      proceedToCheckoutForm();
+    });
+  }
+
+  /* ---------------------------------------------------------------
      9.6 Checkout: datos del cliente + envío a WhatsApp + Supabase
      --------------------------------------------------------------- */
   function resetCheckoutForm() {
@@ -1138,6 +1292,10 @@
     el.pickupNote.hidden = true;
     el.nationalNote.hidden = true;
     el.checkoutError.hidden = true;
+    el.paymentDetailsBox.hidden = true;
+    el.cashPhotoField.hidden = true;
+    el.cashPhotoStatus.textContent = "";
+    cashPhotoUrl = null;
   }
 
   function closeCheckout() {
@@ -1145,8 +1303,7 @@
     document.body.style.overflow = "";
   }
 
-  el.checkoutBtn.addEventListener("click", () => {
-    if (!cartLineItems().length) return;
+  function proceedToCheckoutForm() {
     closeCart();
     resetCheckoutForm();
     const unlocked = isMayorUnlocked();
@@ -1154,8 +1311,38 @@
       ? "🎉 Tu pedido califica para precio Mayor."
       : `Tu pedido va a precio Detal. Agrega ${money(MAYOR_THRESHOLD - cartDetalSubtotal())} más para precio Mayor.`;
     el.checkoutTierNote.classList.toggle("unlocked", unlocked);
+
+    if (upsellAdded && siteSettings) {
+      el.checkoutUpsellNote.textContent = `✨ Agregaste: ${siteSettings.upsell_product_name} (+${money(siteSettings.upsell_price)})`;
+      el.checkoutUpsellNote.hidden = false;
+    } else {
+      el.checkoutUpsellNote.hidden = true;
+    }
+
+    const subtotal = cartTotal();
+    const discount = computeDiscount(subtotal);
+    const upsellPrice = (upsellAdded && siteSettings) ? Number(siteSettings.upsell_price) || 0 : 0;
+    const previewTotal = Math.max(0, subtotal - discount) + upsellPrice;
+    const bsText = formatBs(previewTotal);
+    if (bsText) {
+      el.checkoutBsNote.textContent = `≈ ${bsText} (a la tasa del día)`;
+      el.checkoutBsNote.hidden = false;
+    } else {
+      el.checkoutBsNote.hidden = true;
+    }
+
     el.checkoutOverlay.hidden = false;
     document.body.style.overflow = "hidden";
+  }
+
+  el.checkoutBtn.addEventListener("click", () => {
+    if (!cartLineItems().length) return;
+    closeCart();
+    if (shouldShowUpsell()) {
+      openUpsellModal();
+    } else {
+      proceedToCheckoutForm();
+    }
   });
   el.checkoutClose.addEventListener("click", closeCheckout);
   // A propósito NO cerramos el checkout al hacer clic afuera — así el
@@ -1184,10 +1371,25 @@
       return;
     }
 
+    const paymentVal = el.custPayment.value;
+    const photoRequired = paymentVal === "Efectivo en Caracas" || paymentVal === "Binance" || paymentVal === "Zelle";
+    if (photoRequired && !cashPhotoUrl) {
+      el.checkoutError.textContent = paymentVal === "Efectivo en Caracas"
+        ? "Sube la foto de los billetes antes de continuar."
+        : "Sube la foto o captura del comprobante de pago antes de continuar.";
+      el.checkoutError.hidden = false;
+      return;
+    }
+
     const unlockedMayor = isMayorUnlocked();
     const subtotal = cartTotal();
     const discount = computeDiscount(subtotal);
-    const finalTotal = Math.max(0, subtotal - discount);
+    const upsellPrice = (upsellAdded && siteSettings) ? Number(siteSettings.upsell_price) || 0 : 0;
+    const finalTotal = Math.max(0, subtotal - discount) + upsellPrice;
+    const orderItems = items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, tone: i.tone || null }));
+    if (upsellAdded && siteSettings) {
+      orderItems.push({ id: "upsell", name: siteSettings.upsell_product_name, qty: 1, price: upsellPrice, tone: null });
+    }
     const order = {
       customer_name: el.custName.value.trim(),
       phone: el.custPhone.value.trim(),
@@ -1197,12 +1399,13 @@
       delivery_method: el.custDelivery.value,
       address: el.custAddress.value.trim(),
       note: el.custNote.value.trim(),
-      items: items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, tone: i.tone || null })),
+      items: orderItems,
       total: finalTotal,
       coupon_code: appliedCoupon ? appliedCoupon.code : null,
       discount: discount,
       price_mode: unlockedMayor ? "mayor" : "detal",
       status: "nuevo",
+      cash_photo_url: cashPhotoUrl || null,
     };
 
     el.submitOrderBtn.disabled = true;
@@ -1235,12 +1438,17 @@
     lines.push("¡Hola! Quiero hacer este pedido 🩷");
     lines.push("");
     items.forEach(i => lines.push(`• ${i.qty}x ${i.name} — ${money(i.price)} c/u`));
+    if (upsellAdded && siteSettings) {
+      lines.push(`• 1x ${siteSettings.upsell_product_name} — ${money(upsellPrice)} c/u`);
+    }
     lines.push("");
     if (order.discount > 0) {
       lines.push(`Subtotal: ${money(subtotal)}`);
       lines.push(`Cupón (${order.coupon_code}): -${money(order.discount)}`);
     }
     lines.push(`Total: ${money(order.total)} (${unlockedMayor ? "Mayor" : "Detal"})`);
+    const bsLine = formatBs(order.total);
+    if (bsLine) lines.push(`Equivalente: ≈ ${bsLine} (tasa del día)`);
     lines.push("");
     lines.push(`Nombre: ${order.customer_name}`);
     lines.push(`Teléfono: ${order.phone}`);
@@ -1249,6 +1457,7 @@
     lines.push(`Entrega: ${order.delivery_method}`);
     if (order.address) lines.push(`Dirección: ${order.address}`);
     if (order.note) lines.push(`Nota: ${order.note}`);
+    if (order.cash_photo_url) lines.push(`Comprobante de pago: ${order.cash_photo_url}`);
 
     const rawNumber = typeof WHATSAPP_NUMBER !== "undefined" ? WHATSAPP_NUMBER : "";
     const waConfigured = rawNumber && !rawNumber.includes("PEGA_AQUI");
@@ -1264,6 +1473,8 @@
     trackEvent("generate_lead", { value: order.total, currency: "USD", payment_method: order.payment_method });
     cart = {};
     appliedCoupon = null;
+    upsellAdded = false;
+    cashPhotoUrl = null;
     if (el.couponInput) el.couponInput.value = "";
     if (el.couponMessage) el.couponMessage.hidden = true;
     saveCart();
@@ -1724,6 +1935,7 @@
 
     const [products, settings] = await Promise.all([fetchCatalog(), fetchSettings()]);
     PRODUCTS = products;
+    siteSettings = settings;
     applySettings(settings);
 
     // Si el link trae ?categoria=Ojos (por ejemplo), abre directo ahí
