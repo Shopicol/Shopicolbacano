@@ -766,23 +766,105 @@
   }
 
   /* ---------------------------------------------------------------
+     Consultas livianas a Supabase — a diferencia del catálogo
+     completo (index.html, que sí necesita los 432 productos), esta
+     página solo pide lo que realmente va a mostrar: el producto en
+     cuestión, algunos relacionados, y los que ya estén en el carrito
+     del cliente (para poder mostrar el panel del carrito). Esto evita
+     descargar el catálogo entero (180 KB) solo para ver un producto.
+     --------------------------------------------------------------- */
+  async function fetchProductById(id) {
+    if (!SUPABASE_READY) {
+      return (typeof SEED_PRODUCTS !== "undefined" ? SEED_PRODUCTS : []).find(p => String(p.id) === String(id)) || null;
+    }
+    const { data, error } = await supabaseClient
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.warn("No se pudo cargar el producto:", error.message);
+      return null;
+    }
+    return data;
+  }
+
+  async function fetchProductsByCategory(category, excludeId, limit) {
+    if (!SUPABASE_READY) {
+      return (typeof SEED_PRODUCTS !== "undefined" ? SEED_PRODUCTS : [])
+        .filter(p => p.category === category && String(p.id) !== String(excludeId))
+        .slice(0, limit);
+    }
+    const { data, error } = await supabaseClient
+      .from("products")
+      .select("*")
+      .eq("category", category)
+      .neq("id", excludeId)
+      .limit(limit);
+    if (error) {
+      console.warn("No se pudieron cargar productos relacionados:", error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  async function fetchProductsByIds(ids) {
+    if (!ids.length) return [];
+    if (!SUPABASE_READY) {
+      return (typeof SEED_PRODUCTS !== "undefined" ? SEED_PRODUCTS : [])
+        .filter(p => ids.includes(String(p.id)));
+    }
+    const { data, error } = await supabaseClient
+      .from("products")
+      .select("*")
+      .in("id", ids);
+    if (error) {
+      console.warn("No se pudieron cargar los productos del carrito:", error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  function mergeIntoProducts(list) {
+    list.forEach(p => {
+      if (!PRODUCTS.some(existing => String(existing.id) === String(p.id))) PRODUCTS.push(p);
+    });
+  }
+
+  /* ---------------------------------------------------------------
      Init
      --------------------------------------------------------------- */
   async function init() {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
 
-    const [products, settings] = await Promise.all([fetchCatalog(), fetchSettings()]);
-    PRODUCTS = products;
+    const [product, settings] = await Promise.all([fetchProductById(id), fetchSettings()]);
     applyBrandSettings(settings);
     renderCartBadge();
 
-    const product = PRODUCTS.find(p => String(p.id) === String(id));
     el.productLoading.hidden = true;
 
     if (!product) {
       el.productNotFound.hidden = false;
       return;
+    }
+
+    PRODUCTS = [product];
+
+    // Productos relacionados (misma categoría) — consulta chica, no el catálogo completo
+    const related = await fetchProductsByCategory(product.category, product.id, 6);
+    mergeIntoProducts(related);
+
+    // Si el cliente ya tenía productos en el carrito (de otras páginas),
+    // trae solo esos — no todo el catálogo — para poder mostrarlos.
+    const cartIds = Object.keys(loadCart())
+      .map(key => parseCartKey(key).id)
+      .filter(cartId => !PRODUCTS.some(p => String(p.id) === String(cartId)));
+    const uniqueCartIds = [...new Set(cartIds)];
+    if (uniqueCartIds.length) {
+      const cartProducts = await fetchProductsByIds(uniqueCartIds);
+      mergeIntoProducts(cartProducts);
     }
 
     renderProduct(product);
