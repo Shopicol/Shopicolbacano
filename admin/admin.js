@@ -451,6 +451,18 @@
       brands.map(b => `<option value="${b}">${b}</option>`).join("");
   }
 
+  // Si ya existe una marca escrita distinto solo en mayúsculas/minúsculas
+  // (ej. "purpure" vs "Purpure"), usa la que ya está guardada — así nunca
+  // se crean marcas "duplicadas" por un error de tipeo.
+  function resolveBrandCasing(inputBrand) {
+    const trimmed = (inputBrand || "").trim();
+    if (!trimmed) return trimmed;
+    const existing = allProducts.find(
+      p => p.brand && p.brand.toLowerCase() === trimmed.toLowerCase()
+    );
+    return existing ? existing.brand : trimmed;
+  }
+
   function buildFormDatalists() {
     const cats = Array.from(new Set(allProducts.map(p => p.category))).sort((a, b) => a.localeCompare(b, "es"));
     const brands = Array.from(new Set(allProducts.map(p => p.brand))).sort((a, b) => a.localeCompare(b, "es"));
@@ -1709,7 +1721,7 @@
 
       const payload = {
         name: el.fieldName.value.trim(),
-        brand: el.fieldBrand.value.trim(),
+        brand: resolveBrandCasing(el.fieldBrand.value),
         category: el.fieldCategory.value.trim(),
         ref: el.fieldRef.value.trim(),
         avail: effectiveAvail,
@@ -2080,7 +2092,7 @@
       const extraImages = imageUrls.slice(1);
 
       valid.push({
-        name, brand, category,
+        name, brand: resolveBrandCasing(brand), category,
         ref: String(row["Referencia"] || "").trim(),
         detal, mayor,
         offer: (offerRaw !== "" && offerRaw !== undefined && !isNaN(parseFloat(offerRaw))) ? parseFloat(offerRaw) : null,
