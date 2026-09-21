@@ -79,6 +79,7 @@
     brandOptions: document.getElementById("brandOptions"),
     categoryOptions: document.getElementById("categoryOptions"),
     fieldFeatured: document.getElementById("fieldFeatured"),
+    fieldShowWhenOut: document.getElementById("fieldShowWhenOut"),
     adminFeaturedFilter: document.getElementById("adminFeaturedFilter"),
     galleryList: document.getElementById("galleryList"),
     addGalleryPhotoBtn: document.getElementById("addGalleryPhotoBtn"),
@@ -1714,6 +1715,7 @@
       el.fieldStock.value = product.stock ?? "";
       el.fieldNote.value = product.note || "";
       el.fieldFeatured.checked = Boolean(product.featured);
+      el.fieldShowWhenOut.checked = product.show_when_out_of_stock !== false;
       el.fieldTones.value = product.tones || "";
       galleryRows = [];
       galleryRowSeq = 0;
@@ -1837,6 +1839,7 @@
         tones: el.fieldTones.value.trim(),
         note: el.fieldNote.value.trim(),
         featured: el.fieldFeatured.checked,
+        show_when_out_of_stock: el.fieldShowWhenOut.checked,
       };
 
       const id = el.fieldId.value;
