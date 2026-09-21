@@ -510,6 +510,33 @@ small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; fon
 .review-admin-actions .btn-primary-sm{ background:var(--pink); border-color:var(--pink); color:#fff; }
 .review-admin-actions button:hover{ opacity:.85; }
 
+/* ============================= AVÍSAME CUANDO VUELVA ============================= */
+.restock-admin-list{ display:flex; flex-direction:column; gap:16px; }
+.restock-product-group{
+  background:var(--paper); border:1px solid var(--line); border-radius:14px;
+  padding:14px 18px; box-shadow:var(--shadow-sm);
+}
+.restock-product-group h3{ font-size:14px; margin:0 0 10px; }
+.restock-count{ color:var(--ink-soft); font-weight:400; font-size:12.5px; }
+.restock-request-row{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:8px 0; border-top:1px solid var(--line); font-size:13px;
+}
+.restock-request-row:first-of-type{ border-top:none; }
+.restock-request-row.notified{ opacity:.55; }
+.restock-phone{ font-weight:600; min-width:130px; }
+.restock-date{ color:var(--ink-soft); font-size:12px; }
+.restock-wa-link{
+  color:#227a45; text-decoration:none; font-weight:600; font-size:12.5px;
+  background:#e4f5e9; padding:5px 10px; border-radius:999px;
+}
+.restock-request-row button{
+  font-size:12px; font-weight:600; padding:5px 11px; border-radius:999px;
+  border:1.5px solid var(--line); background:var(--paper); cursor:pointer;
+}
+.restock-notified-tag{ color:#227a45; font-weight:700; font-size:12.5px; }
+.restock-delete-btn{ margin-left:auto; color:var(--danger); }
+
 /* ============================= COLECCIONES ============================= */
 .collections-admin-list{ display:flex; flex-direction:column; gap:12px; }
 .collection-admin-card{

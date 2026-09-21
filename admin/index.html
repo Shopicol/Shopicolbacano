@@ -78,6 +78,7 @@
       <button class="admin-tab" data-tab="banners">🖼 Banners</button>
       <button class="admin-tab" data-tab="coupons">🎟 Cupones</button>
       <button class="admin-tab" data-tab="reviews">⭐ Reseñas <span class="tab-badge" id="reviewsBadge" hidden>0</span></button>
+      <button class="admin-tab" data-tab="restock">🔔 Avísame <span class="tab-badge" id="restockBadge" hidden>0</span></button>
       <button class="admin-tab" data-tab="collections">🗂 Colecciones</button>
       <button class="admin-tab" data-tab="settings">🎨 Ajustes</button>
       <button class="admin-tab" data-tab="customers">👥 Clientes</button>
@@ -291,6 +292,19 @@
       <div class="reviews-admin-list" id="reviewsAdminList"><!-- filas por JS --></div>
       <p class="admin-empty" id="reviewsAdminEmpty" hidden>Todavía no hay reseñas.</p>
     </div><!-- /tabReviews -->
+
+    <!-- ============ TAB: AVÍSAME CUANDO VUELVA ============ -->
+    <div class="admin-tab-panel" id="tabRestock" hidden>
+      <section class="admin-toolbar">
+        <p class="banners-hint">Clientes esperando a que un producto vuelva a estar disponible. Márcalos como "avisados" después de escribirles por WhatsApp.</p>
+        <div class="admin-stats">
+          <div class="mini-stat"><strong id="statRestockPending">0</strong><span>pendientes</span></div>
+        </div>
+      </section>
+
+      <div class="restock-admin-list" id="restockAdminList"><!-- filas por JS --></div>
+      <p class="admin-empty" id="restockAdminEmpty" hidden>Nadie ha pedido que le avisen de ningún producto todavía.</p>
+    </div><!-- /tabRestock -->
 
     <!-- ============ TAB: COLECCIONES ============ -->
     <div class="admin-tab-panel" id="tabCollections" hidden>

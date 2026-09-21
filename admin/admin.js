@@ -94,6 +94,11 @@
     tabBanners: document.getElementById("tabBanners"),
     tabCoupons: document.getElementById("tabCoupons"),
     tabReviews: document.getElementById("tabReviews"),
+    tabRestock: document.getElementById("tabRestock"),
+    restockAdminList: document.getElementById("restockAdminList"),
+    restockAdminEmpty: document.getElementById("restockAdminEmpty"),
+    statRestockPending: document.getElementById("statRestockPending"),
+    restockBadge: document.getElementById("restockBadge"),
     tabCollections: document.getElementById("tabCollections"),
     collectionsAdminList: document.getElementById("collectionsAdminList"),
     collectionsAdminEmpty: document.getElementById("collectionsAdminEmpty"),
@@ -397,6 +402,7 @@
     loadBanners();
     loadCoupons();
     loadReviewsAdmin();
+    loadRestockAdmin();
     loadCollectionsAdmin();
     loadSettings();
   }
@@ -404,7 +410,7 @@
   /* ---------------------------------------------------------------
      Pestañas (Productos / Pedidos / Banners)
      --------------------------------------------------------------- */
-  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, collections: el.tabCollections, settings: el.tabSettings, customers: el.tabCustomers };
+  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, restock: el.tabRestock, collections: el.tabCollections, settings: el.tabSettings, customers: el.tabCustomers };
   el.tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       el.tabButtons.forEach(b => b.classList.remove("active"));
@@ -1377,6 +1383,103 @@
       allReviews = allReviews.filter(r => String(r.id) !== String(delId));
       renderReviewsAdmin();
       showToast("Reseña eliminada");
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     "Avísame cuando vuelva" — solicitudes de restock
+     --------------------------------------------------------------- */
+  let allRestockRequests = [];
+
+  // Convierte un número local (ej. "0412-1234567", como la gente suele
+  // escribirlo) al formato internacional que necesita un link wa.me.
+  function formatWhatsAppNumber(phone) {
+    let digits = (phone || "").replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("0")) {
+      digits = "58" + digits.slice(1); // Venezuela
+    }
+    return digits;
+  }
+
+  async function loadRestockAdmin() {
+    const { data, error } = await supabaseClient
+      .from("stock_notifications")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.warn("No se pudieron cargar las solicitudes de restock:", error.message);
+      return;
+    }
+    allRestockRequests = data || [];
+    renderRestockAdmin();
+  }
+
+  function renderRestockAdmin() {
+    const pending = allRestockRequests.filter(r => !r.notified).length;
+    el.statRestockPending.textContent = pending;
+    el.restockBadge.textContent = pending;
+    el.restockBadge.hidden = pending === 0;
+
+    if (!allRestockRequests.length) {
+      el.restockAdminList.innerHTML = "";
+      el.restockAdminEmpty.hidden = false;
+      return;
+    }
+    el.restockAdminEmpty.hidden = true;
+
+    // Agrupa por producto, para que el equipo vea de un vistazo cuántas
+    // personas esperan cada producto
+    const byProduct = {};
+    allRestockRequests.forEach(r => {
+      const key = String(r.product_id);
+      if (!byProduct[key]) byProduct[key] = { name: r.product_name, requests: [] };
+      byProduct[key].requests.push(r);
+    });
+
+    el.restockAdminList.innerHTML = Object.entries(byProduct).map(([productId, group]) => {
+      const rowsHtml = group.requests.map(r => {
+        const waNumber = formatWhatsAppNumber(r.phone);
+        const waMessage = encodeURIComponent(`¡Hola! Te escribo porque pediste que te avisara cuando "${group.name}" volviera a estar disponible 🩷 ¡Ya llegó! ¿Aún te interesa?`);
+        return `
+          <div class="restock-request-row ${r.notified ? "notified" : ""}">
+            <span class="restock-phone">${r.phone}</span>
+            <span class="restock-date">${new Date(r.created_at).toLocaleDateString("es-VE", { dateStyle: "medium" })}</span>
+            <a href="https://wa.me/${waNumber}?text=${waMessage}" target="_blank" rel="noopener" class="restock-wa-link">💬 WhatsApp</a>
+            ${r.notified
+              ? `<span class="restock-notified-tag">✓ Avisado</span>`
+              : `<button data-mark-notified="${r.id}">Marcar avisado</button>`}
+            <button data-delete-restock="${r.id}" class="restock-delete-btn">✕</button>
+          </div>
+        `;
+      }).join("");
+      return `
+        <div class="restock-product-group">
+          <h3>${group.name} <span class="restock-count">(${group.requests.length})</span></h3>
+          ${rowsHtml}
+        </div>
+      `;
+    }).join("");
+  }
+
+  el.restockAdminList.addEventListener("click", async (e) => {
+    const markId = e.target.closest("[data-mark-notified]")?.dataset.markNotified;
+    const delId = e.target.closest("[data-delete-restock]")?.dataset.deleteRestock;
+
+    if (markId) {
+      const { error } = await supabaseClient.from("stock_notifications").update({ notified: true }).eq("id", markId);
+      if (error) { showToast("No se pudo actualizar: " + error.message, true); return; }
+      const r = allRestockRequests.find(x => String(x.id) === String(markId));
+      if (r) r.notified = true;
+      renderRestockAdmin();
+      showToast("Marcado como avisado");
+    }
+    if (delId) {
+      if (!window.confirm("¿Eliminar esta solicitud?")) return;
+      const { error } = await supabaseClient.from("stock_notifications").delete().eq("id", delId);
+      if (error) { showToast("No se pudo eliminar: " + error.message, true); return; }
+      allRestockRequests = allRestockRequests.filter(r => String(r.id) !== String(delId));
+      renderRestockAdmin();
+      showToast("Solicitud eliminada");
     }
   });
 
