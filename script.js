@@ -389,6 +389,10 @@
     const q = normalize(state.query);
 
     let list = PRODUCTS.filter(p => {
+      // Un agotado se muestra (al final, con botón "Avísame") solo si
+      // el equipo lo dejó marcado como visible — si no, se oculta del
+      // todo, como antes.
+      if (!isEffectivelyAvailable(p) && p.show_when_out_of_stock === false) return false;
       if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
       if (state.showOnlyFavorites && !isFavorite(p.id)) return false;
