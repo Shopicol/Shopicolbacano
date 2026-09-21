@@ -111,6 +111,21 @@
     // carrito
     favoritesBtn: document.getElementById("favoritesBtn"),
     favoritesCount: document.getElementById("favoritesCount"),
+    myOrdersBtn: document.getElementById("myOrdersBtn"),
+    myOrdersOverlay: document.getElementById("myOrdersOverlay"),
+    myOrdersClose: document.getElementById("myOrdersClose"),
+    myOrdersForm: document.getElementById("myOrdersForm"),
+    myOrdersPhone: document.getElementById("myOrdersPhone"),
+    myOrdersSearchBtn: document.getElementById("myOrdersSearchBtn"),
+    myOrdersMessage: document.getElementById("myOrdersMessage"),
+    myOrdersResults: document.getElementById("myOrdersResults"),
+    notifyModalOverlay: document.getElementById("notifyModalOverlay"),
+    notifyModalClose: document.getElementById("notifyModalClose"),
+    notifyProductName: document.getElementById("notifyProductName"),
+    notifyForm: document.getElementById("notifyForm"),
+    notifyPhone: document.getElementById("notifyPhone"),
+    notifySubmitBtn: document.getElementById("notifySubmitBtn"),
+    notifyMessage: document.getElementById("notifyMessage"),
     cartReminder: document.getElementById("cartReminder"),
     cartReminderText: document.getElementById("cartReminderText"),
     cartReminderResume: document.getElementById("cartReminderResume"),
@@ -181,6 +196,8 @@
     bannerDots: document.getElementById("bannerDots"),
     recentSection: document.getElementById("recentSection"),
     recentScroll: document.getElementById("recentScroll"),
+    recentlyViewedSection: document.getElementById("recentlyViewedSection"),
+    recentlyViewedScroll: document.getElementById("recentlyViewedScroll"),
     featuredSection: document.getElementById("featuredSection"),
     featuredScroll: document.getElementById("featuredScroll"),
     collectionsContainer: document.getElementById("collectionsContainer"),
@@ -372,7 +389,6 @@
     const q = normalize(state.query);
 
     let list = PRODUCTS.filter(p => {
-      if (!isEffectivelyAvailable(p)) return false; // los agotados nunca se muestran al público
       if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
       if (state.showOnlyFavorites && !isFavorite(p.id)) return false;
@@ -395,9 +411,19 @@
         list = list.slice().sort((a, b) => a.name.localeCompare(b.name, "es"));
         break;
       default:
-        // "relevance": mantiene el orden original del catálogo (ya vienen
-        // todos disponibles, así que no hace falta reordenar por eso)
+        // "relevance": mantiene el orden original del catálogo
     }
+
+    // Los agotados se muestran (con su sello "Agotado" y el botón
+    // "Avísame cuando vuelva"), pero siempre al final — nunca antes que
+    // un producto disponible, sin importar el orden elegido.
+    list = list
+      .map((p, i) => ({ p, i }))
+      .sort((a, b) => {
+        const availDiff = (isEffectivelyAvailable(b.p) ? 1 : 0) - (isEffectivelyAvailable(a.p) ? 1 : 0);
+        return availDiff !== 0 ? availDiff : a.i - b.i;
+      })
+      .map(x => x.p);
 
     return list;
   }
@@ -414,6 +440,9 @@
       : (opts.isNew ? `<span class="card-badge card-badge-new">Nuevo</span>` : "");
     const stamp = !avail
       ? `<span class="stamp-agotado">Agotado</span>`
+      : "";
+    const notifyBtn = !avail
+      ? `<button class="card-notify-btn" data-notify-id="${p.id}" data-notify-name="${p.name.replace(/"/g, "&quot;")}">🔔 Avísame</button>`
       : "";
     const lowStock = (avail && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number(p.stock) > 0 && Number(p.stock) <= 5)
       ? `<span class="card-lowstock">¡Solo quedan ${p.stock}!</span>`
@@ -435,6 +464,7 @@
           </button>
           ${badge}
           ${stamp}
+          ${notifyBtn}
           ${quickAdd}
         </div>
         <div class="card-body">
@@ -493,6 +523,13 @@
         btn.classList.toggle("active", nowFavorite);
         // Si estamos viendo solo favoritos y se quitó uno, lo saca de la vista
         if (state.showOnlyFavorites && !nowFavorite) render();
+      });
+    });
+
+    container.querySelectorAll("[data-notify-id]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        openNotifyModal(btn.dataset.notifyId, btn.dataset.notifyName);
       });
     });
   }
@@ -622,6 +659,7 @@
     el.modalQty.textContent = modalQtyValue;
     el.modalAddCart.disabled = !avail;
     el.modalAddCart.textContent = avail ? "Agregar al carrito" : "Agotado";
+    trackRecentlyViewed(p.id);
 
     el.modalOverlay.hidden = false;
     document.body.style.overflow = "hidden";
@@ -1238,6 +1276,135 @@
   }
 
   /* ---------------------------------------------------------------
+     "Avísame cuando vuelva" — el cliente deja su WhatsApp para un
+     producto agotado, y queda guardado para que el equipo le avise.
+     --------------------------------------------------------------- */
+  let notifyProductId = null;
+
+  function openNotifyModal(productId, productName) {
+    notifyProductId = productId;
+    el.notifyProductName.textContent = productName;
+    el.notifyMessage.hidden = true;
+    el.notifyForm.hidden = false;
+    el.notifyPhone.value = "";
+    el.notifyModalOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function closeNotifyModal() {
+    el.notifyModalOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+  el.notifyModalClose.addEventListener("click", closeNotifyModal);
+  el.notifyModalOverlay.addEventListener("click", e => {
+    if (e.target === el.notifyModalOverlay) closeNotifyModal();
+  });
+
+  el.notifyForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!SUPABASE_READY || !notifyProductId) return;
+
+    el.notifySubmitBtn.disabled = true;
+    el.notifySubmitBtn.textContent = "Enviando…";
+    try {
+      const { error } = await supabaseClient.from("stock_notifications").insert({
+        product_id: notifyProductId,
+        product_name: el.notifyProductName.textContent,
+        phone: el.notifyPhone.value.trim(),
+      });
+      if (error) throw error;
+
+      el.notifyForm.hidden = true;
+      el.notifyMessage.textContent = "✅ ¡Listo! Te vamos a avisar por WhatsApp apenas esté disponible.";
+      el.notifyMessage.className = "notify-message notify-ok";
+      el.notifyMessage.hidden = false;
+    } catch (err) {
+      el.notifyMessage.textContent = "No se pudo enviar. Intenta de nuevo en un momento.";
+      el.notifyMessage.className = "notify-message notify-error";
+      el.notifyMessage.hidden = false;
+    } finally {
+      el.notifySubmitBtn.disabled = false;
+      el.notifySubmitBtn.textContent = "Avísenme";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     "Mis pedidos" — el cliente busca su historial escribiendo el
+     mismo teléfono con el que hizo sus pedidos. La búsqueda usa una
+     función seguraq que SOLO devuelve pedidos que coincidan con ese
+     teléfono exacto — nunca los de otra persona.
+     --------------------------------------------------------------- */
+  function openMyOrdersModal() {
+    el.myOrdersMessage.hidden = true;
+    el.myOrdersResults.innerHTML = "";
+    el.myOrdersPhone.value = "";
+    el.myOrdersOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function closeMyOrdersModal() {
+    el.myOrdersOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+  el.myOrdersBtn.addEventListener("click", openMyOrdersModal);
+  el.myOrdersClose.addEventListener("click", closeMyOrdersModal);
+  el.myOrdersOverlay.addEventListener("click", e => {
+    if (e.target === el.myOrdersOverlay) closeMyOrdersModal();
+  });
+
+  const ORDER_STATUS_LABELS = {
+    nuevo: "🆕 Nuevo",
+    tomado: "📦 Pedido tomado",
+    entregado: "✅ Entregado",
+    cancelado: "❌ Cancelado",
+  };
+
+  el.myOrdersForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    el.myOrdersMessage.hidden = true;
+    el.myOrdersResults.innerHTML = "";
+
+    if (!SUPABASE_READY) return;
+    const phone = el.myOrdersPhone.value.trim();
+
+    el.myOrdersSearchBtn.disabled = true;
+    el.myOrdersSearchBtn.textContent = "Buscando…";
+    try {
+      const { data, error } = await supabaseClient.rpc("get_orders_by_phone", { search_phone: phone });
+      if (error) throw error;
+
+      if (!data || !data.length) {
+        el.myOrdersMessage.textContent = "No encontramos pedidos con ese número.";
+        el.myOrdersMessage.className = "my-orders-message";
+        el.myOrdersMessage.hidden = false;
+        return;
+      }
+
+      el.myOrdersResults.innerHTML = data.map(order => {
+        const items = Array.isArray(order.items) ? order.items : [];
+        const itemsText = items.map(i => `${i.qty}x ${i.name}`).join(", ");
+        const date = new Date(order.created_at).toLocaleDateString("es-VE", { dateStyle: "medium" });
+        const statusLabel = ORDER_STATUS_LABELS[order.status] || order.status;
+        return `
+          <div class="my-order-card">
+            <div class="my-order-top">
+              <span class="my-order-date">${date}</span>
+              <span class="my-order-status">${statusLabel}</span>
+            </div>
+            <p class="my-order-items">${itemsText}</p>
+            <p class="my-order-total">Total: ${money(order.total)}</p>
+          </div>
+        `;
+      }).join("");
+    } catch (err) {
+      el.myOrdersMessage.textContent = "No se pudo buscar tu pedido. Intenta de nuevo.";
+      el.myOrdersMessage.className = "my-orders-message";
+      el.myOrdersMessage.hidden = false;
+    } finally {
+      el.myOrdersSearchBtn.disabled = false;
+      el.myOrdersSearchBtn.textContent = "Buscar";
+    }
+  });
+
+  /* ---------------------------------------------------------------
      Oferta adicional (upsell) — se muestra antes del checkout
      --------------------------------------------------------------- */
   function shouldShowUpsell() {
@@ -1723,6 +1890,47 @@
   /* ---------------------------------------------------------------
      9.75 Recién llegado (4 productos más recientes: nuevos o editados)
      --------------------------------------------------------------- */
+  /* ---------------------------------------------------------------
+     "Vistos recientemente" — guarda los últimos productos vistos en
+     este navegador (compartido con producto.js) y los muestra en un
+     carrusel en la portada.
+     --------------------------------------------------------------- */
+  const RECENTLY_VIEWED_KEY = "shopicol_recently_viewed_v1";
+  const RECENTLY_VIEWED_MAX = 12;
+
+  function trackRecentlyViewed(productId) {
+    let ids = [];
+    try {
+      ids = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY)) || [];
+    } catch (e) {}
+    ids = ids.filter(id => String(id) !== String(productId));
+    ids.unshift(String(productId));
+    ids = ids.slice(0, RECENTLY_VIEWED_MAX);
+    try {
+      localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(ids));
+    } catch (e) {}
+  }
+
+  function renderRecentlyViewedSection() {
+    let ids = [];
+    try {
+      ids = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY)) || [];
+    } catch (e) {}
+
+    const viewed = ids
+      .map(id => PRODUCTS.find(p => String(p.id) === String(id)))
+      .filter(p => p && isEffectivelyAvailable(p))
+      .slice(0, 12);
+
+    if (!viewed.length) {
+      el.recentlyViewedSection.hidden = true;
+      return;
+    }
+    el.recentlyViewedSection.hidden = false;
+    el.recentlyViewedScroll.innerHTML = viewed.map((p, i) => cardTemplate(p, i)).join("");
+    attachCardListeners(el.recentlyViewedScroll);
+  }
+
   function renderRecentSection() {
     const recent = PRODUCTS
       .filter(p => isEffectivelyAvailable(p) && (p.updated_at || p.created_at))
@@ -1970,6 +2178,7 @@
     buildCategoryPills();
     renderCartBadge();
     renderRecentSection();
+    renderRecentlyViewedSection();
     renderFeatured();
     loadCollections();
     render();

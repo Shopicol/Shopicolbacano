@@ -60,6 +60,10 @@
     modalQtyPlus: document.getElementById("modalQtyPlus"),
     modalQty: document.getElementById("modalQty"),
     modalAddCart: document.getElementById("modalAddCart"),
+    notifyInlineForm: document.getElementById("notifyInlineForm"),
+    notifyInlinePhone: document.getElementById("notifyInlinePhone"),
+    notifyInlineBtn: document.getElementById("notifyInlineBtn"),
+    notifyInlineMessage: document.getElementById("notifyInlineMessage"),
 
     relatedSection: document.getElementById("relatedSection"),
     relatedScroll: document.getElementById("relatedScroll"),
@@ -342,6 +346,11 @@
     el.modalQty.textContent = modalQtyValue;
     el.modalAddCart.disabled = !avail;
     el.modalAddCart.textContent = avail ? "Agregar al carrito" : "Agotado";
+    el.notifyInlineForm.hidden = avail;
+    if (!avail) {
+      el.notifyInlineForm.reset();
+      el.notifyInlineMessage.hidden = true;
+    }
     loadReviews(p.id);
   }
 
@@ -363,6 +372,39 @@
     el.relatedSection.hidden = false;
     el.relatedScroll.innerHTML = related.map((x, i) => cardTemplate(x, i)).join("");
     attachCardListeners(el.relatedScroll);
+  }
+
+  /* ---------------------------------------------------------------
+     "Avísame cuando vuelva"
+     --------------------------------------------------------------- */
+  if (el.notifyInlineForm) {
+    el.notifyInlineForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!SUPABASE_READY || !currentProduct) return;
+
+      el.notifyInlineBtn.disabled = true;
+      el.notifyInlineBtn.textContent = "Enviando…";
+      try {
+        const { error } = await supabaseClient.from("stock_notifications").insert({
+          product_id: currentProduct.id,
+          product_name: currentProduct.name,
+          phone: el.notifyInlinePhone.value.trim(),
+        });
+        if (error) throw error;
+
+        el.notifyInlineMessage.textContent = "✅ ¡Listo! Te avisamos por WhatsApp apenas esté disponible.";
+        el.notifyInlineMessage.className = "notify-message notify-ok";
+        el.notifyInlineMessage.hidden = false;
+        el.notifyInlinePhone.value = "";
+      } catch (err) {
+        el.notifyInlineMessage.textContent = "No se pudo enviar. Intenta de nuevo.";
+        el.notifyInlineMessage.className = "notify-message notify-error";
+        el.notifyInlineMessage.hidden = false;
+      } finally {
+        el.notifyInlineBtn.disabled = false;
+        el.notifyInlineBtn.textContent = "Avísenme";
+      }
+    });
   }
 
   /* ---------------------------------------------------------------
@@ -869,7 +911,28 @@
 
     renderProduct(product);
     renderRelated(product);
+    trackRecentlyViewed(product.id);
     el.productCard.hidden = false;
+  }
+
+  /* ---------------------------------------------------------------
+     "Vistos recientemente" — guarda los últimos productos vistos en
+     este navegador, para mostrarlos luego en la portada.
+     --------------------------------------------------------------- */
+  const RECENTLY_VIEWED_KEY = "shopicol_recently_viewed_v1";
+  const RECENTLY_VIEWED_MAX = 12;
+
+  function trackRecentlyViewed(productId) {
+    let ids = [];
+    try {
+      ids = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY)) || [];
+    } catch (e) {}
+    ids = ids.filter(id => String(id) !== String(productId));
+    ids.unshift(String(productId));
+    ids = ids.slice(0, RECENTLY_VIEWED_MAX);
+    try {
+      localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(ids));
+    } catch (e) {}
   }
 
   document.addEventListener("DOMContentLoaded", init);

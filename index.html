@@ -72,6 +72,14 @@
       <span class="mode-label">Ver precio <strong id="modeWord">Detal</strong></span>
     </button>
 
+    <button class="my-orders-btn" id="myOrdersBtn" aria-label="Ver mis pedidos" title="Mis pedidos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 7L12 3L20 7V17L12 21L4 17V7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M4 7L12 11L20 7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 11V21" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+
     <button class="favorites-btn" id="favoritesBtn" aria-label="Ver favoritos" aria-pressed="false">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -131,6 +139,12 @@
   <section class="featured-section" id="recentSection" hidden>
     <h2 class="featured-title">✦ Recién llegado ✦</h2>
     <div class="featured-scroll" id="recentScroll"><!-- filled by JS --></div>
+  </section>
+
+  <!-- ============ VISTOS RECIENTEMENTE (personalizado, por navegador) ============ -->
+  <section class="featured-section" id="recentlyViewedSection" hidden>
+    <h2 class="featured-title">✦ Vistos recientemente ✦</h2>
+    <div class="featured-scroll" id="recentlyViewedScroll"><!-- filled by JS --></div>
   </section>
 
   <!-- ============ DESTACADOS Y EN OFERTA ============ -->
@@ -266,6 +280,39 @@
       <button class="btn-primary btn-block" id="checkoutBtn">Continuar pedido</button>
     </div>
   </aside>
+</div>
+
+<!-- ============ AVÍSAME CUANDO VUELVA ============ -->
+<div class="modal-overlay" id="notifyModalOverlay" hidden>
+  <div class="modal-card notify-card">
+    <button class="modal-close" id="notifyModalClose" aria-label="Cerrar">✕</button>
+    <div class="notify-emoji">🔔</div>
+    <h2>Avísame cuando vuelva</h2>
+    <p class="notify-product-name" id="notifyProductName"></p>
+    <form id="notifyForm">
+      <label>
+        <span>Tu WhatsApp</span>
+        <input type="tel" id="notifyPhone" required placeholder="Ej: 0412 1234567">
+      </label>
+      <button type="submit" class="btn-primary btn-block" id="notifySubmitBtn">Avísenme</button>
+    </form>
+    <p class="notify-message" id="notifyMessage" hidden></p>
+  </div>
+</div>
+
+<!-- ============ MIS PEDIDOS ============ -->
+<div class="modal-overlay" id="myOrdersOverlay" hidden>
+  <div class="modal-card my-orders-card">
+    <button class="modal-close" id="myOrdersClose" aria-label="Cerrar">✕</button>
+    <h2>📦 Mis pedidos</h2>
+    <p class="my-orders-sub">Escribe el número con el que hiciste tu(s) pedido(s).</p>
+    <form id="myOrdersForm">
+      <input type="tel" id="myOrdersPhone" required placeholder="Ej: 0412 1234567">
+      <button type="submit" id="myOrdersSearchBtn">Buscar</button>
+    </form>
+    <p class="my-orders-message" id="myOrdersMessage" hidden></p>
+    <div id="myOrdersResults" class="my-orders-results"></div>
+  </div>
 </div>
 
 <!-- ============ OFERTA ADICIONAL (upsell antes del checkout) ============ -->

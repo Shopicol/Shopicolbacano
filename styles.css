@@ -739,6 +739,63 @@ button, select, input{ font-family:inherit; }
   backdrop-filter:blur(1px);
 }
 
+/* ============================= "AVÍSAME CUANDO VUELVA" ============================= */
+.card-notify-btn{
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  background:var(--ink); color:#fff; border:none; border-radius:999px;
+  padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer;
+  white-space:nowrap; z-index:2;
+}
+.card-notify-btn:hover{ background:var(--pink); }
+
+.notify-card{ max-width:380px; text-align:center; padding:34px 30px; }
+.modal-card.notify-card{ display:block; }
+.notify-emoji{ font-size:36px; margin-bottom:6px; }
+.notify-card h2{ font-family:var(--font-display); font-size:20px; margin:0 0 8px; }
+.notify-product-name{ font-size:13px; color:var(--ink-soft); margin:0 0 20px; }
+#notifyForm label{ display:flex; flex-direction:column; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-soft); text-align:left; margin-bottom:14px; }
+#notifyForm input{ padding:11px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; }
+#notifyForm input:focus{ outline:none; border-color:var(--pink); }
+.notify-message{ font-size:13px; margin-top:12px; padding:10px 14px; border-radius:8px; }
+.notify-message.notify-ok{ background:#e4f5e9; color:#227a45; }
+.notify-message.notify-error{ background:var(--danger-soft); color:var(--danger); }
+
+.notify-inline-form{ margin-top:12px; }
+.notify-inline-label{ font-size:12.5px; color:var(--ink-soft); margin:0 0 8px; }
+.notify-inline-row{ display:flex; gap:8px; }
+.notify-inline-row input{ flex:1; padding:11px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:13.5px; }
+.notify-inline-row input:focus{ outline:none; border-color:var(--pink); }
+.notify-inline-row button{
+  background:var(--ink); color:#fff; border:none; border-radius:10px;
+  padding:0 18px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
+}
+.notify-inline-row button:hover{ background:var(--pink); }
+
+/* ============================= MIS PEDIDOS ============================= */
+.my-orders-btn{
+  background:none; border:none; cursor:pointer; color:var(--ink);
+  display:flex; align-items:center; justify-content:center; padding:6px;
+}
+.my-orders-card{ max-width:420px; }
+.modal-card.my-orders-card{ display:block; }
+.my-orders-card h2{ font-family:var(--font-display); font-size:19px; margin:0 0 6px; }
+.my-orders-sub{ font-size:13px; color:var(--ink-soft); margin:0 0 16px; }
+#myOrdersForm{ display:flex; gap:8px; margin-bottom:14px; }
+#myOrdersForm input{ flex:1; padding:11px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; }
+#myOrdersForm input:focus{ outline:none; border-color:var(--pink); }
+#myOrdersForm button{
+  background:var(--pink); color:#fff; border:none; border-radius:10px;
+  padding:0 20px; font-weight:700; font-size:13.5px; cursor:pointer;
+}
+#myOrdersForm button:hover{ background:var(--pink-dark); }
+.my-orders-message{ font-size:13px; color:var(--ink-soft); text-align:center; padding:10px; }
+.my-orders-results{ display:flex; flex-direction:column; gap:10px; max-height:50vh; overflow-y:auto; }
+.my-order-card{ background:var(--cream); border-radius:12px; padding:14px 16px; }
+.my-order-top{ display:flex; justify-content:space-between; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+.my-order-status{ font-weight:700; }
+.my-order-items{ font-size:13px; margin:0 0 6px; }
+.my-order-total{ font-size:14px; font-weight:700; color:var(--pink-dark); margin:0; }
+
 .card-body{ padding:0 4px; flex:1; display:flex; flex-direction:column; }
 .card-brand{
   font-size:10.5px;
