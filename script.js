@@ -846,6 +846,20 @@
     el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
+  // Flechas de "ver anteriores/siguientes" en los carruseles horizontales
+  // (Recién llegado, Vistos recientemente, Destacados, Colecciones). Un
+  // solo manejador delegado sirve para todos, incluidas las colecciones
+  // que se generan dinámicamente después.
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".scroll-arrow");
+    if (!btn) return;
+    const wrap = btn.closest(".featured-scroll-wrap");
+    const scrollEl = wrap && wrap.querySelector(".featured-scroll, .related-scroll");
+    if (!scrollEl) return;
+    const amount = scrollEl.clientWidth * 0.85;
+    scrollEl.scrollBy({ left: btn.classList.contains("next") ? amount : -amount, behavior: "smooth" });
+  });
+
   el.sortSelect.addEventListener("change", () => {
     state.sort = el.sortSelect.value;
     render();
@@ -2005,7 +2019,11 @@
       return `
         <section class="featured-section collection-section" data-collection-id="${col.id}">
           <h2 class="featured-title">✦ ${escapeHtml(col.title)} ✦</h2>
-          <div class="featured-scroll" data-collection-scroll="${col.id}"><!-- filled below --></div>
+          <div class="featured-scroll-wrap">
+            <button class="scroll-arrow prev" aria-label="Ver anteriores">‹</button>
+            <div class="featured-scroll" data-collection-scroll="${col.id}"><!-- filled below --></div>
+            <button class="scroll-arrow next" aria-label="Ver siguientes">›</button>
+          </div>
         </section>
       `;
     }).join("");

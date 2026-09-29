@@ -935,5 +935,16 @@
     } catch (e) {}
   }
 
+  // Flechas de "ver anteriores/siguientes" en el carrusel de relacionados
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".scroll-arrow");
+    if (!btn) return;
+    const wrap = btn.closest(".featured-scroll-wrap");
+    const scrollEl = wrap && wrap.querySelector(".featured-scroll, .related-scroll");
+    if (!scrollEl) return;
+    const amount = scrollEl.clientWidth * 0.85;
+    scrollEl.scrollBy({ left: btn.classList.contains("next") ? amount : -amount, behavior: "smooth" });
+  });
+
   document.addEventListener("DOMContentLoaded", init);
 })();
