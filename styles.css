@@ -525,12 +525,14 @@ button, select, input{ font-family:inherit; }
 }
 .marquee-track .marquee-brand:hover{ color:var(--pink); opacity:1; }
 .marquee-track .marquee-brand.has-logo{ padding:0 20px; }
+.marquee-logo-wrap{ display:inline-flex; align-items:center; gap:10px; }
 .marquee-brand-logo{
-  height:32px; max-width:110px; width:auto; object-fit:contain;
-  background:var(--cream); border-radius:8px; padding:4px 10px;
-  opacity:.92; transition:opacity .15s, transform .15s;
+  width:38px; height:38px; object-fit:cover;
+  border-radius:50%; background:var(--cream);
+  border:2px solid var(--cream);
+  opacity:.95; transition:opacity .15s, transform .15s, border-color .15s;
 }
-.marquee-brand.has-logo:hover .marquee-brand-logo{ opacity:1; transform:scale(1.05); }
+.marquee-brand.has-logo:hover .marquee-brand-logo{ opacity:1; transform:scale(1.08); border-color:var(--pink); }
 .marquee-track span::after, .marquee-track .marquee-brand::after{
   content:"✦";
   font-style:normal;

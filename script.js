@@ -299,7 +299,7 @@
       .map(b => {
         const logoUrl = BRAND_LOGOS[b];
         const inner = logoUrl
-          ? `<img src="${logoUrl}" alt="${b}" class="marquee-brand-logo" loading="lazy">`
+          ? `<span class="marquee-logo-wrap"><img src="${logoUrl}" alt="" class="marquee-brand-logo" loading="lazy"><span>${b}</span></span>`
           : b;
         return `<button type="button" class="marquee-brand${logoUrl ? " has-logo" : ""}" data-marquee-brand="${b}">${inner}</button>`;
       })
