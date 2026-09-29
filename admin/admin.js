@@ -96,6 +96,8 @@
     tabCoupons: document.getElementById("tabCoupons"),
     tabReviews: document.getElementById("tabReviews"),
     tabRestock: document.getElementById("tabRestock"),
+    tabBrandLogos: document.getElementById("tabBrandLogos"),
+    brandLogosList: document.getElementById("brandLogosList"),
     restockAdminList: document.getElementById("restockAdminList"),
     restockAdminEmpty: document.getElementById("restockAdminEmpty"),
     statRestockPending: document.getElementById("statRestockPending"),
@@ -404,6 +406,7 @@
     loadCoupons();
     loadReviewsAdmin();
     loadRestockAdmin();
+    loadBrandLogosAdmin();
     loadCollectionsAdmin();
     loadSettings();
   }
@@ -411,7 +414,7 @@
   /* ---------------------------------------------------------------
      Pestañas (Productos / Pedidos / Banners)
      --------------------------------------------------------------- */
-  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, restock: el.tabRestock, collections: el.tabCollections, settings: el.tabSettings, customers: el.tabCustomers };
+  const tabPanels = { summary: el.tabSummary, products: el.tabProducts, orders: el.tabOrders, banners: el.tabBanners, coupons: el.tabCoupons, reviews: el.tabReviews, restock: el.tabRestock, brandlogos: el.tabBrandLogos, collections: el.tabCollections, settings: el.tabSettings, customers: el.tabCustomers };
   el.tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       el.tabButtons.forEach(b => b.classList.remove("active"));
@@ -440,6 +443,7 @@
     buildFilterOptions();
     buildFormDatalists();
     renderTable();
+    renderBrandLogosAdmin();
   }
 
   function paintStats() {
@@ -1481,6 +1485,100 @@
       allRestockRequests = allRestockRequests.filter(r => String(r.id) !== String(delId));
       renderRestockAdmin();
       showToast("Solicitud eliminada");
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Logos de marca — para el marquee de la portada
+     --------------------------------------------------------------- */
+  let allBrandLogos = {}; // brand -> logo_url
+  const pendingBrandLogoFiles = {}; // brand -> File
+
+  async function loadBrandLogosAdmin() {
+    const { data, error } = await supabaseClient.from("brand_logos").select("*");
+    if (error) {
+      console.warn("No se pudieron cargar los logos de marca:", error.message);
+      return;
+    }
+    allBrandLogos = {};
+    (data || []).forEach(row => (allBrandLogos[row.brand] = row.logo_url));
+    renderBrandLogosAdmin();
+  }
+
+  function renderBrandLogosAdmin() {
+    const brands = Array.from(new Set(allProducts.map(p => p.brand))).sort((a, b) => a.localeCompare(b, "es"));
+    if (!brands.length) {
+      el.brandLogosList.innerHTML = `<p class="admin-empty">Todavía no hay productos con marca cargados.</p>`;
+      return;
+    }
+    el.brandLogosList.innerHTML = brands.map(brand => {
+      const currentUrl = allBrandLogos[brand] || "";
+      const safeBrand = brand.replace(/"/g, "&quot;");
+      return `
+        <div class="brand-logo-row" data-brand-row="${safeBrand}">
+          <div class="brand-logo-preview">
+            ${currentUrl ? `<img src="${currentUrl}" alt="${safeBrand}">` : `<span class="brand-logo-placeholder">${brand}</span>`}
+          </div>
+          <strong class="brand-logo-name">${brand}</strong>
+          <input type="file" accept="image/*" data-brand-file="${safeBrand}" class="brand-logo-file-input">
+          <button type="button" data-brand-save="${safeBrand}" class="brand-logo-save-btn">${currentUrl ? "Cambiar" : "Subir logo"}</button>
+          ${currentUrl ? `<button type="button" data-brand-remove="${safeBrand}" class="brand-logo-remove-btn">Quitar</button>` : ""}
+        </div>
+      `;
+    }).join("");
+  }
+
+  el.brandLogosList.addEventListener("change", (e) => {
+    const brand = e.target.closest("[data-brand-file]")?.dataset.brandFile;
+    if (brand && e.target.files[0]) {
+      pendingBrandLogoFiles[brand] = e.target.files[0];
+    }
+  });
+
+  el.brandLogosList.addEventListener("click", async (e) => {
+    const saveBrand = e.target.closest("[data-brand-save]")?.dataset.brandSave;
+    const removeBrand = e.target.closest("[data-brand-remove]")?.dataset.brandRemove;
+
+    if (saveBrand) {
+      const file = pendingBrandLogoFiles[saveBrand];
+      if (!file) {
+        showToast("Primero elige un archivo de imagen.", true);
+        return;
+      }
+      const btn = e.target.closest("[data-brand-save]");
+      btn.disabled = true;
+      btn.textContent = "Subiendo…";
+      try {
+        const ext = file.name.split(".").pop();
+        const path = `brand-logo-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
+        const { error: uploadError } = await supabaseClient.storage.from("product-images").upload(path, file, { upsert: false });
+        if (uploadError) throw uploadError;
+        const { data } = supabaseClient.storage.from("product-images").getPublicUrl(path);
+
+        const { error: saveError } = await supabaseClient
+          .from("brand_logos")
+          .upsert({ brand: saveBrand, logo_url: data.publicUrl, updated_at: new Date().toISOString() });
+        if (saveError) throw saveError;
+
+        allBrandLogos[saveBrand] = data.publicUrl;
+        delete pendingBrandLogoFiles[saveBrand];
+        renderBrandLogosAdmin();
+        showToast(`Logo de ${saveBrand} guardado ✓`);
+      } catch (err) {
+        showToast("No se pudo subir el logo: " + err.message, true);
+        btn.disabled = false;
+        btn.textContent = "Subir logo";
+      }
+      return;
+    }
+
+    if (removeBrand) {
+      if (!window.confirm(`¿Quitar el logo de "${removeBrand}"? Volverá a mostrarse solo el nombre en texto.`)) return;
+      const { error } = await supabaseClient.from("brand_logos").delete().eq("brand", removeBrand);
+      if (error) { showToast("No se pudo quitar: " + error.message, true); return; }
+      delete allBrandLogos[removeBrand];
+      renderBrandLogosAdmin();
+      showToast("Logo quitado");
     }
   });
 
