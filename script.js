@@ -44,6 +44,7 @@
   // El catálogo se llena de forma asíncrona en init() — puede venir de
   // Supabase (en vivo) o del catálogo semilla local (SEED_PRODUCTS).
   let PRODUCTS = [];
+  let BRAND_LOGOS = {}; // marca -> url del logo (si lo tiene)
   const CATEGORY_ORDER = [
     "Todas", "Rostro", "Ojos", "Labios", "Cejas",
     "Brochas y Pinceles", "Capilar", "Cuidado Corporal", "Cuidado Facial",
@@ -292,9 +293,16 @@
     el.footerBrandsList.textContent = brands.join(" · ");
 
     // Marquee decorativo (se repite 2 veces para el loop continuo) — cada
-    // marca es clickeable y filtra el catálogo por esa marca.
+    // marca es clickeable y filtra el catálogo por esa marca. Si la marca
+    // tiene un logo real subido, se muestra la imagen; si no, el nombre.
     const marqueeItems = [...brands, ...brands]
-      .map(b => `<button type="button" class="marquee-brand" data-marquee-brand="${b}">${b}</button>`)
+      .map(b => {
+        const logoUrl = BRAND_LOGOS[b];
+        const inner = logoUrl
+          ? `<img src="${logoUrl}" alt="${b}" class="marquee-brand-logo" loading="lazy">`
+          : b;
+        return `<button type="button" class="marquee-brand${logoUrl ? " has-logo" : ""}" data-marquee-brand="${b}">${inner}</button>`;
+      })
       .join("");
     el.marqueeTrack.innerHTML = marqueeItems;
   }
@@ -2097,7 +2105,7 @@
     }
 
     if (settings.hero_subtitle === DEFAULT_SETTINGS.hero_subtitle) {
-      el.heroSubtitle.innerHTML = 'Maquillaje, capilares y cuidado personal colombiano, directo del catálogo Shopicol.\n      Compra al <strong>detal</strong> sin mínimo, o accede a precio <strong>mayorista</strong> desde $50 en tu compra.';
+      el.heroSubtitle.innerHTML = 'Maquillaje y cuidado personal colombiano, directo a Caracas.';
     } else {
       el.heroSubtitle.textContent = settings.hero_subtitle || "";
     }
@@ -2150,9 +2158,10 @@
     // (instantáneo con datos locales; puede tardar un instante con Supabase).
     el.resultsCount.textContent = "Cargando catálogo…";
 
-    const [products, settings] = await Promise.all([fetchCatalog(), fetchSettings()]);
+    const [products, settings, brandLogos] = await Promise.all([fetchCatalog(), fetchSettings(), fetchBrandLogos()]);
     PRODUCTS = products;
     siteSettings = settings;
+    BRAND_LOGOS = brandLogos;
     applySettings(settings);
 
     // Si el link trae ?categoria=Ojos (por ejemplo), abre directo ahí

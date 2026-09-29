@@ -152,3 +152,18 @@ async function fetchSettings() {
   }
   return { ...DEFAULT_SETTINGS };
 }
+
+// Logos reales de marca para el marquee (si una marca no tiene logo
+// subido, el marquee simplemente muestra su nombre en texto).
+async function fetchBrandLogos() {
+  if (SUPABASE_READY) {
+    const { data, error } = await supabaseClient.from("brand_logos").select("*");
+    if (!error && data) {
+      const map = {};
+      data.forEach(row => (map[row.brand] = row.logo_url));
+      return map;
+    }
+    console.warn("No se pudieron leer los logos de marca.", error);
+  }
+  return {};
+}
