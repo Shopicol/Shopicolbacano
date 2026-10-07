@@ -22,8 +22,8 @@
 
   const el = {
     searchInput: document.getElementById("searchInput"),
-    modeToggle: document.getElementById("modeToggle"),
-    modeWord: document.getElementById("modeWord"),
+    modeToggle: document.getElementById("modeToggle") || document.createElement("button"),
+    modeWord: document.getElementById("modeWord") || document.createElement("strong"),
     cartBtn: document.getElementById("cartBtn"),
     cartCount: document.getElementById("cartCount"),
 

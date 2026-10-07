@@ -81,10 +81,11 @@
       <div class="search-suggestions" id="searchSuggestions" role="listbox" hidden></div>
     </div>
 
-    <button class="mode-toggle" id="modeToggle" aria-pressed="false">
-      <span class="mode-dot"></span>
-      <span class="mode-label">Ver precio <strong id="modeWord">Detal</strong></span>
-    </button>
+    <div class="header-menu" id="headerMenu">
+      <button type="button" class="hm-btn" id="hmCategories" aria-haspopup="true" aria-expanded="false">Categorías <span class="hm-caret">▾</span></button>
+      <button type="button" class="hm-btn" id="hmBrands" aria-haspopup="true" aria-expanded="false">Marcas <span class="hm-caret">▾</span></button>
+      <button type="button" class="hm-btn hm-primary" id="hmAll">Ver todo</button>
+    </div>
 
     <button class="my-orders-btn" id="myOrdersBtn" aria-label="Ver mis pedidos" title="Mis pedidos">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

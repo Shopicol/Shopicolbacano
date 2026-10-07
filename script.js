@@ -65,8 +65,8 @@
     productGrid: document.getElementById("productGrid"),
     emptyState: document.getElementById("emptyState"),
     resetFilters: document.getElementById("resetFilters"),
-    modeToggle: document.getElementById("modeToggle"),
-    modeWord: document.getElementById("modeWord"),
+    modeToggle: document.getElementById("modeToggle") || document.createElement("button"),
+    modeWord: document.getElementById("modeWord") || document.createElement("strong"),
     marqueeTrack: document.getElementById("marqueeTrack"),
     footerBrandsList: document.getElementById("footerBrandsList"),
     footerBottom: document.getElementById("footerBottom"),
@@ -338,8 +338,16 @@
     const presentCats = new Set(PRODUCTS.map(p => p.category));
     const cats = CATEGORY_ORDER.filter(c => c !== "Todas" && presentCats.has(c));
     nav.innerHTML = `<button type="button" data-nav-cat="__home">Inicio</button>` +
+      `<button type="button" class="nav-extra" data-nav-act="all">Ver todo</button>` +
+      `<button type="button" class="nav-extra" data-nav-act="brands" aria-haspopup="true" aria-expanded="false">Marcas ▾</button>` +
       cats.map(c => `<button type="button" data-nav-cat="${c}">${c}</button>`).join("");
     nav.onclick = e => {
+      const act = e.target.closest("[data-nav-act]");
+      if (act) {
+        if (act.dataset.navAct === "all") showAll();
+        else openMenuPop(act, "brands");
+        return;
+      }
       const btn = e.target.closest("[data-nav-cat]");
       if (!btn) return;
       const cat = btn.dataset.navCat;
@@ -363,6 +371,96 @@
       b.classList.toggle("active", c === "__home" ? state.category === "Todas" : c === state.category);
     });
   }
+
+  /* ---------------------------------------------------------------
+     Botones del encabezado: Categorías ▾ · Marcas ▾ · Ver todo
+     --------------------------------------------------------------- */
+  const menuPop = document.createElement("div");
+  menuPop.className = "menu-pop";
+  menuPop.id = "menuPop";
+  menuPop.setAttribute("role", "menu");
+  menuPop.hidden = true;
+  document.body.appendChild(menuPop);
+  let menuPopOwner = null;
+
+  function closeMenuPop() {
+    menuPop.hidden = true;
+    if (menuPopOwner) { menuPopOwner.setAttribute("aria-expanded", "false"); menuPopOwner = null; }
+  }
+
+  function applyBrandFilter(brand) {
+    state.brand = brand || "";
+    if (brand) state.category = "Todas";          // igual que la cinta: toda la marca
+    el.brandSelect.value = state.brand;
+    document.querySelectorAll(".pill").forEach(pl => pl.classList.toggle("active", pl.dataset.cat === state.category));
+    render();
+    el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function showAll() {                              // "Ver todo": quita filtros y va al catálogo
+    el.resetFilters.click();
+    setSearchInURL("");
+    document.querySelector('.pill[data-cat="Todas"]')?.click();
+    el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openMenuPop(btn, kind) {
+    if (menuPopOwner === btn && !menuPop.hidden) { closeMenuPop(); return; }
+    closeMenuPop();
+    let html = "";
+    if (kind === "categories") {
+      const counts = {};
+      PRODUCTS.forEach(pr => { counts[pr.category] = (counts[pr.category] || 0) + 1; });
+      const cats = CATEGORY_ORDER.filter(c => c !== "Todas" && counts[c]);
+      html = `<button type="button" role="menuitem" class="mp-item ${state.category === "Todas" ? "active" : ""}" data-pop-cat="Todas"><span>Todas las categorías</span><em>${PRODUCTS.length}</em></button>` +
+        cats.map(c => `<button type="button" role="menuitem" class="mp-item ${state.category === c ? "active" : ""}" data-pop-cat="${escapeHtml(c)}"><span>${escapeHtml(c)}</span><em>${counts[c]}</em></button>`).join("");
+    } else {
+      const counts = {};
+      PRODUCTS.forEach(pr => { counts[pr.brand] = (counts[pr.brand] || 0) + 1; });
+      const brands = Object.keys(counts).filter(Boolean).sort((a, b) => a.localeCompare(b, "es"));
+      html = `<button type="button" role="menuitem" class="mp-item ${!state.brand ? "active" : ""}" data-pop-brand=""><span>Todas las marcas</span><em>${PRODUCTS.length}</em></button>` +
+        brands.map(b => {
+          const logo = BRAND_LOGOS[b] ? `<img src="${escapeHtml(BRAND_LOGOS[b])}" alt="" class="mp-logo">` : `<span class="mp-logo mp-logo-ph">${escapeHtml(b.charAt(0))}</span>`;
+          return `<button type="button" role="menuitem" class="mp-item ${state.brand === b ? "active" : ""}" data-pop-brand="${escapeHtml(b)}">${logo}<span>${escapeHtml(b)}</span><em>${counts[b]}</em></button>`;
+        }).join("");
+    }
+    menuPop.innerHTML = html;
+    menuPop.hidden = false;
+    const r = btn.getBoundingClientRect();
+    const w = Math.min(320, window.innerWidth - 16);
+    menuPop.style.width = w + "px";
+    menuPop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + "px";
+    menuPop.style.top = (r.bottom + 6) + "px";
+    menuPop.style.maxHeight = Math.max(160, window.innerHeight - r.bottom - 20) + "px";
+    menuPop.scrollTop = 0;
+    btn.setAttribute("aria-expanded", "true");
+    menuPopOwner = btn;
+  }
+
+  menuPop.addEventListener("click", e => {
+    const catBtn = e.target.closest("[data-pop-cat]");
+    const brandBtn = e.target.closest("[data-pop-brand]");
+    if (catBtn) {
+      const cat = catBtn.dataset.popCat;
+      closeMenuPop();
+      document.querySelector('.pill[data-cat="' + cat + '"]')?.click();
+      el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (brandBtn) {
+      closeMenuPop();
+      applyBrandFilter(brandBtn.dataset.popBrand);
+    }
+  });
+  document.getElementById("hmCategories")?.addEventListener("click", e => openMenuPop(e.currentTarget, "categories"));
+  document.getElementById("hmBrands")?.addEventListener("click", e => openMenuPop(e.currentTarget, "brands"));
+  document.getElementById("hmAll")?.addEventListener("click", () => { closeMenuPop(); showAll(); });
+  document.addEventListener("click", e => {
+    if (menuPop.hidden) return;
+    if (e.target.closest(".menu-pop, #hmCategories, #hmBrands, [data-nav-act='brands']")) return;
+    closeMenuPop();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenuPop(); });
+  window.addEventListener("scroll", closeMenuPop, { passive: true });
+  window.addEventListener("resize", closeMenuPop);
 
   // Lee la categoría desde la URL (ej. ?categoria=Ojos) al cargar la página,
   // así los links compartidos abren directo en esa categoría.
@@ -2240,6 +2338,20 @@
 
     const [products, settings, brandLogos] = await Promise.all([fetchCatalog(), fetchSettings(), fetchBrandLogos()]);
     PRODUCTS = products;
+
+    // Unifica marcas escritas con distinta mayúscula (ej. "purpure" y "Purpure"):
+    // todas pasan a usar la forma más común, para que no salgan marcas repetidas.
+    const brandForms = {};
+    PRODUCTS.forEach(pr => {
+      const key = String(pr.brand || "").trim().toLowerCase();
+      if (!brandForms[key]) brandForms[key] = {};
+      brandForms[key][pr.brand] = (brandForms[key][pr.brand] || 0) + 1;
+    });
+    PRODUCTS.forEach(pr => {
+      const forms = brandForms[String(pr.brand || "").trim().toLowerCase()];
+      pr.brand = Object.keys(forms).sort((a, b) => forms[b] - forms[a])[0];
+    });
+
     siteSettings = settings;
     BRAND_LOGOS = brandLogos;
     applySettings(settings);

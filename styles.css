@@ -1395,3 +1395,41 @@ body.is-searching #collectionsContainer{ display:none !important; }
 
 /* La "✕" de limpiar búsqueda solo se ve cuando hay texto escrito */
 .clear-btn[hidden]{ display:none; }
+
+
+/* ============================= BOTONES DEL ENCABEZADO: Categorías · Marcas · Ver todo ============================= */
+.header-menu{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.hm-btn{
+  display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  background:#fff; color:var(--ink); border:1.5px solid var(--line); border-radius:999px;
+  padding:9px 15px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; text-decoration:none;
+  transition:border-color .15s, transform .15s, background .15s;
+}
+.hm-btn:hover{ border-color:var(--pink); transform:translateY(-1px); }
+.hm-caret{ font-size:10px; opacity:.7; }
+.hm-btn[aria-expanded="true"]{ border-color:var(--pink); background:var(--cream, #fbf6ec); }
+.hm-primary{ background:var(--ink); color:var(--cream, #fbf6ec); border-color:var(--ink); }
+.hm-primary:hover{ border-color:var(--ink); background:#000; }
+
+.menu-pop{
+  position:fixed; z-index:60; background:#fff; border:1px solid var(--line); border-radius:16px;
+  box-shadow:0 18px 50px rgba(43,27,23,.22); padding:6px; overflow-y:auto; overscroll-behavior:contain;
+}
+.menu-pop[hidden]{ display:none; }
+.mp-item{
+  display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:none; background:none;
+  border-radius:10px; text-align:left; font-family:inherit; font-size:14px; color:var(--ink); cursor:pointer;
+}
+.mp-item:hover{ background:rgba(0,0,0,.05); }
+.mp-item.active{ background:var(--pink); font-weight:700; }
+.mp-item span:not(.mp-logo){ flex:1; }
+.mp-item em{ font-style:normal; font-size:12px; opacity:.55; }
+.mp-logo{ width:26px; height:26px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--line); }
+.mp-logo-ph{ display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--ink); }
+
+.category-nav .nav-extra{ display:none; }
+@media (max-width:1000px){ #hmCategories{ display:none; } }
+@media (max-width:640px){
+  .header-menu{ display:none; }
+  .category-nav .nav-extra{ display:block; }
+}
