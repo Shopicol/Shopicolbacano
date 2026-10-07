@@ -946,5 +946,13 @@
     scrollEl.scrollBy({ left: btn.classList.contains("next") ? amount : -amount, behavior: "smooth" });
   });
 
+  // "← Volver al catálogo": regresa a la misma búsqueda/categoría donde estaba la persona
+  document.addEventListener("DOMContentLoaded", () => {
+    const back = document.getElementById("backToCatalog");
+    let saved = null;
+    try { saved = sessionStorage.getItem("shopicol_catalog_url"); } catch (e) {}
+    if (back && saved && /^\/(index\.html)?(\?.*)?$/.test(saved)) back.setAttribute("href", saved);
+  });
+
   document.addEventListener("DOMContentLoaded", init);
 })();

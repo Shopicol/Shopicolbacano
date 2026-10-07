@@ -78,9 +78,9 @@
     footerTagline: document.getElementById("footerTagline"),
     footerDescription: document.getElementById("footerDescription"),
     metaDescription: document.getElementById("metaDescription"),
-    eyebrowText: document.getElementById("eyebrowText"),
-    heroTitle: document.getElementById("heroTitle"),
-    heroSubtitle: document.getElementById("heroSubtitle"),
+    eyebrowText: document.getElementById("eyebrowText") || document.createElement("p"),
+    heroTitle: document.getElementById("heroTitle") || document.createElement("h1"),
+    heroSubtitle: document.getElementById("heroSubtitle") || document.createElement("p"),
     contactSection: document.getElementById("contactSection"),
     contactTitle: document.getElementById("contactTitle"),
     contactSubtitle: document.getElementById("contactSubtitle"),
@@ -330,6 +330,40 @@
     });
   }
 
+  // Barra de categorías (arriba, bajo el header): usa exactamente los mismos
+  // filtros que las pills, así todo queda sincronizado.
+  function buildCategoryNav() {
+    const nav = document.getElementById("categoryNav");
+    if (!nav) return;
+    const presentCats = new Set(PRODUCTS.map(p => p.category));
+    const cats = CATEGORY_ORDER.filter(c => c !== "Todas" && presentCats.has(c));
+    nav.innerHTML = `<button type="button" data-nav-cat="__home">Inicio</button>` +
+      cats.map(c => `<button type="button" data-nav-cat="${c}">${c}</button>`).join("");
+    nav.onclick = e => {
+      const btn = e.target.closest("[data-nav-cat]");
+      if (!btn) return;
+      const cat = btn.dataset.navCat;
+      if (cat === "__home") {
+        el.resetFilters.click();      // limpia búsqueda, marca, categoría y orden
+        setSearchInURL("");
+        document.querySelector('.pill[data-cat="Todas"]')?.click();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      document.querySelector('.pill[data-cat="' + cat + '"]')?.click();
+      el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    syncCategoryNav();
+  }
+  function syncCategoryNav() {
+    const nav = document.getElementById("categoryNav");
+    if (!nav) return;
+    nav.querySelectorAll("[data-nav-cat]").forEach(b => {
+      const c = b.dataset.navCat;
+      b.classList.toggle("active", c === "__home" ? state.category === "Todas" : c === state.category);
+    });
+  }
+
   // Lee la categoría desde la URL (ej. ?categoria=Ojos) al cargar la página,
   // así los links compartidos abren directo en esa categoría.
   function getCategoryFromURL() {
@@ -547,6 +581,18 @@
   }
 
   function render() {
+    syncCategoryNav();
+
+    // Modo búsqueda: si hay texto buscado o una marca elegida, se ocultan banners,
+    // "Recién llegado", destacados y colecciones; solo quedan los resultados.
+    const searching = state.query.trim().length > 0 || !!state.brand;
+    const wasSearching = document.body.classList.contains("is-searching");
+    document.body.classList.toggle("is-searching", searching);
+    if (searching && !wasSearching) window.scrollTo({ top: 0 });
+
+    // Recuerda el estado del catálogo (búsqueda/categoría) para "Volver al catálogo"
+    try { sessionStorage.setItem("shopicol_catalog_url", location.pathname + location.search); } catch (e) {}
+
     const filtered = getFilteredProducts();
 
     // contador de resultados
@@ -724,6 +770,21 @@
     renderSuggestions(el.searchInput.value.trim());
   });
 
+  // Blindaje: si el navegador restaura la página al volver con "atrás" (o el
+  // texto cambia por pegar/cortar/autocompletar), re-sincroniza el buscador.
+  ["change", "paste", "cut"].forEach(evt => el.searchInput.addEventListener(evt, () => debouncedSearch()));
+  window.addEventListener("pageshow", e => {
+    if (!e.persisted) return;
+    const v = el.searchInput.value.trim();
+    state.query = v;
+    el.clearSearch.hidden = v.length === 0;
+    hideSuggestions();
+    render();
+  });
+  window.addEventListener("pagehide", () => {
+    try { sessionStorage.setItem("shopicol_catalog_url", location.pathname + location.search); } catch (e) {}
+  });
+
   el.clearSearch.addEventListener("click", () => {
     el.searchInput.value = "";
     state.query = "";
@@ -876,6 +937,7 @@
     el.sortSelect.value = "relevance";
     document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
     document.querySelector('.pill[data-cat="Todas"]')?.classList.add("active");
+    setSearchInURL("");
     render();
   });
 
@@ -2207,6 +2269,7 @@
 
     buildBrandOptions();
     buildCategoryPills();
+    buildCategoryNav();
     renderCartBadge();
     renderRecentSection();
     renderRecentlyViewedSection();
