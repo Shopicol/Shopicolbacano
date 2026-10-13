@@ -300,13 +300,34 @@
     }
   });
 
+  /* Reduce las fotos antes de subirlas (una foto de celular de 2-4 MB queda en ~100 KB sin que se note).
+     Conserva la transparencia. Si el navegador no puede, o el archivo ya es liviano, se sube tal cual. */
+  async function compressForUpload(file, maxSide) {
+    try {
+      if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
+      const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      const blob = await new Promise(res => canvas.toBlob(res, "image/webp", 0.85));
+      if (!blob || blob.type !== "image/webp") return file;
+      if (scale === 1 && blob.size >= file.size * 0.95) return file;
+      return blob;
+    } catch (e) { return file; }
+  }
+  const uploadExt = (up, orig) => (up.type === "image/webp" ? "webp" : (orig.name.split(".").pop() || "jpg"));
+  const uploadOpts = up => ({ upsert: false, contentType: up.type || undefined, cacheControl: "31536000" });
+
   async function buildGalleryImagesArray() {
     const urls = [];
     for (const row of galleryRows) {
       if (row.file) {
-        const ext = row.file.name.split(".").pop();
+        const up = await compressForUpload(row.file, 1200);
+        const ext = uploadExt(up, row.file);
         const path = `producto-galeria-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
-        const { error } = await supabaseClient.storage.from("product-images").upload(path, row.file, { upsert: false });
+        const { error } = await supabaseClient.storage.from("product-images").upload(path, up, uploadOpts(up));
         if (error) throw new Error("No se pudo subir una foto de la galería: " + error.message);
         const { data } = supabaseClient.storage.from("product-images").getPublicUrl(path);
         urls.push(data.publicUrl);
@@ -1107,10 +1128,11 @@
 
   async function uploadBannerImageIfNeeded() {
     if (!pendingBannerImageFile) return el.bannerFieldImageUrl.value.trim();
-    const ext = pendingBannerImageFile.name.split(".").pop();
-    const path = `banner-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
     el.bannerImageUploadStatus.textContent = "Subiendo imagen…";
-    const { error: uploadError } = await supabaseClient.storage.from("product-images").upload(path, pendingBannerImageFile, { upsert: false });
+    const up = await compressForUpload(pendingBannerImageFile, 2400);
+    const ext = uploadExt(up, pendingBannerImageFile);
+    const path = `banner-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
+    const { error: uploadError } = await supabaseClient.storage.from("product-images").upload(path, up, uploadOpts(up));
     if (uploadError) throw new Error("No se pudo subir la imagen: " + uploadError.message);
     const { data } = supabaseClient.storage.from("product-images").getPublicUrl(path);
     el.bannerImageUploadStatus.textContent = "Imagen subida ✓";
@@ -1888,14 +1910,14 @@
   async function uploadImageIfNeeded() {
     if (!pendingImageFile) return el.fieldImageUrl.value.trim();
 
-    const ext = pendingImageFile.name.split(".").pop();
-    const path = `producto-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
-
     el.imageUploadStatus.textContent = "Subiendo imagen…";
+    const up = await compressForUpload(pendingImageFile, 1200);
+    const ext = uploadExt(up, pendingImageFile);
+    const path = `producto-${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
     const { error: uploadError } = await supabaseClient
       .storage
       .from("product-images")
-      .upload(path, pendingImageFile, { upsert: false });
+      .upload(path, up, uploadOpts(up));
 
     if (uploadError) {
       throw new Error("No se pudo subir la imagen: " + uploadError.message);
