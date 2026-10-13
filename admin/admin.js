@@ -176,6 +176,8 @@
     bannerImageUploadStatus: document.getElementById("bannerImageUploadStatus"),
     bannerFieldButtonText: document.getElementById("bannerFieldButtonText"),
     bannerFieldButtonLink: document.getElementById("bannerFieldButtonLink"),
+    bannerFieldDest: document.getElementById("bannerFieldDest"),
+    bannerCustomLinkWrap: document.getElementById("bannerCustomLinkWrap"),
     bannerFieldOrder: document.getElementById("bannerFieldOrder"),
     bannerFieldActive: document.getElementById("bannerFieldActive"),
     deleteBannerBtn: document.getElementById("deleteBannerBtn"),
@@ -1068,7 +1070,10 @@
       el.bannerFieldSubtitle.value = banner.subtitle || "";
       el.bannerFieldImageUrl.value = banner.image || "";
       el.bannerFieldButtonText.value = banner.button_text || "";
-      el.bannerFieldButtonLink.value = banner.button_link || "";
+      const savedLink = banner.button_link || "";
+      const destOpt = Array.from(el.bannerFieldDest.options).find(o => o.value === savedLink && o.value !== "custom");
+      el.bannerFieldDest.value = !savedLink ? "" : (destOpt ? savedLink : "custom");
+      el.bannerFieldButtonLink.value = el.bannerFieldDest.value === "custom" ? savedLink : "";
       el.bannerFieldOrder.value = banner.sort_order || 0;
       el.bannerFieldActive.checked = Boolean(banner.active);
       if (banner.image) {
@@ -1095,9 +1100,13 @@
       el.bannerImagePreview.hidden = true;
       el.deleteBannerBtn.hidden = true;
     }
+    el.bannerCustomLinkWrap.hidden = el.bannerFieldDest.value !== "custom";
     el.bannerModalOverlay.hidden = false;
     document.body.style.overflow = "hidden";
   }
+  el.bannerFieldDest.addEventListener("change", () => {
+    el.bannerCustomLinkWrap.hidden = el.bannerFieldDest.value !== "custom";
+  });
 
   function closeBannerModal() {
     el.bannerModalOverlay.hidden = true;
@@ -1152,7 +1161,7 @@
         subtitle: el.bannerFieldSubtitle.value.trim(),
         image: imageUrl || "",
         button_text: el.bannerFieldButtonText.value.trim(),
-        button_link: el.bannerFieldButtonLink.value.trim(),
+        button_link: el.bannerFieldDest.value === "custom" ? el.bannerFieldButtonLink.value.trim() : el.bannerFieldDest.value,
         sort_order: parseInt(el.bannerFieldOrder.value, 10) || 0,
         active: el.bannerFieldActive.checked,
       };

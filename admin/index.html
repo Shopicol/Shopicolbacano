@@ -903,16 +903,34 @@
         </label>
       </div>
 
-      <div class="form-row two">
-        <label>
-          <span>Texto del botón (opcional)</span>
-          <input type="text" id="bannerFieldButtonText" placeholder="Ej: Ver catálogo">
-        </label>
-        <label>
-          <span>Link del botón (opcional)</span>
-          <input type="text" id="bannerFieldButtonLink" placeholder="Ej: #top">
-        </label>
-      </div>
+      <label>
+        <span>Al hacer clic en el banner, ir a</span>
+        <select id="bannerFieldDest">
+          <option value="">Sin enlace</option>
+          <option value="categoria:Todas">Ver todo el catálogo</option>
+          <optgroup label="Categorías">
+            <option value="categoria:Rostro">Rostro</option>
+            <option value="categoria:Ojos">Ojos</option>
+            <option value="categoria:Labios">Labios</option>
+            <option value="categoria:Cejas">Cejas</option>
+            <option value="categoria:Brochas y Pinceles">Brochas y Pinceles</option>
+            <option value="categoria:Capilar">Capilar</option>
+            <option value="categoria:Cuidado Corporal">Cuidado Corporal</option>
+            <option value="categoria:Cuidado Facial">Cuidado Facial</option>
+            <option value="categoria:Accesorios">Accesorios</option>
+            <option value="categoria:Otros">Otros</option>
+          </optgroup>
+          <option value="custom">Otro enlace (URL)…</option>
+        </select>
+      </label>
+      <label id="bannerCustomLinkWrap" hidden>
+        <span>Enlace (URL)</span>
+        <input type="text" id="bannerFieldButtonLink" placeholder="https://shopicolbacano.com/?buscar=bloom">
+      </label>
+      <label>
+        <span>Texto del botón (opcional)</span>
+        <input type="text" id="bannerFieldButtonText" placeholder="Déjalo vacío si la imagen ya trae su texto">
+      </label>
 
       <div class="form-row two">
         <label>

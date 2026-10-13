@@ -656,3 +656,5 @@ small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; fon
 }
 
 .form-hint{ font-size:12px; color:#7a6a63; line-height:1.5; margin:-4px 0 14px; }
+
+#bannerCustomLinkWrap[hidden]{ display:none; }
