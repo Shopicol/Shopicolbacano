@@ -79,7 +79,7 @@ button, select, input{ font-family:inherit; }
 /* ============================= BANNER CAROUSEL ============================= */
 .banner-carousel{
   position:relative; overflow:hidden; border-radius:20px;
-  max-width:1280px; margin:20px auto 0; padding:0 20px;
+  width:calc(100% - 40px); max-width:1240px; margin:20px auto 0; padding:0;
 }
 .banner-carousel[hidden]{ display:none; }
 .banner-track{
@@ -1432,4 +1432,17 @@ body.is-searching #collectionsContainer{ display:none !important; }
 @media (max-width:640px){
   .header-menu{ display:none; }
   .category-nav .nav-extra{ display:block; }
+}
+
+
+/* ============================= BANNER SOLO IMAGEN (se ve completo, sin recortes) ============================= */
+.banner-slide.image-only{ aspect-ratio:359 / 100; min-height:0; padding:0; background:#e9d9cf; overflow:hidden; display:block; }
+.banner-slide.image-only::before{ display:none; }
+.banner-slide.image-only .banner-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(.95); transform:scale(1.15); }
+.banner-slide.image-only .banner-img{ position:relative; display:block; width:100%; height:100%; object-fit:contain; }
+.banner-slide.is-link{ cursor:pointer; }
+@media (max-width:640px){
+  .banner-carousel{ width:calc(100% - 24px); border-radius:14px; }
+  .banner-nav{ display:none; }          /* en celular se desliza con el dedo */
+  .banner-dots{ bottom:6px; }
 }

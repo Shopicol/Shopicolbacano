@@ -1900,15 +1900,30 @@
   function renderBanners() {
     if (!bannerSlides.length) return;
     el.bannerCarousel.hidden = false;
-    el.bannerTrack.innerHTML = bannerSlides.map(b => `
+    const escA = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    el.bannerTrack.innerHTML = bannerSlides.map((b, i) => {
+      const hasText = !!((b.title || "").trim() || (b.subtitle || "").trim() || (b.button_text || "").trim());
+      const link = (b.button_link || "").trim();
+      const hasLink = !!link && link !== "#";
+      // Banner con texto propio: foto de fondo + título/botón (como antes)
+      if (hasText) {
+        return `
       <div class="banner-slide" style="background-image:url('${(b.image || "").replace(/'/g, "\\'")}')">
         <div class="banner-slide-content">
-          <h3>${b.title}</h3>
+          ${b.title ? `<h3>${b.title}</h3>` : ""}
           ${b.subtitle ? `<p>${b.subtitle}</p>` : ""}
           ${b.button_text ? `<a href="${b.button_link || "#"}">${b.button_text}</a>` : ""}
         </div>
-      </div>
-    `).join("");
+      </div>`;
+      }
+      // Banner solo imagen (la imagen ya trae su texto): se ve COMPLETO, sin recortes ni texto repetido
+      const load = i === 0 ? 'fetchpriority="high"' : 'loading="lazy"';
+      return `
+      <div class="banner-slide image-only${hasLink ? " is-link" : ""}"${hasLink ? ` data-link="${escA(link)}" role="link" tabindex="0"` : ""}>
+        <img class="banner-bg" src="${escA(b.image)}" alt="" aria-hidden="true" ${load}>
+        <img class="banner-img" src="${escA(b.image)}" alt="Banner ${i + 1}" ${load}>
+      </div>`;
+    }).join("");
     el.bannerDots.innerHTML = bannerSlides.map((_, i) =>
       `<button data-dot="${i}" class="${i === 0 ? "active" : ""}" aria-label="Ir al slide ${i + 1}"></button>`
     ).join("");
@@ -1929,6 +1944,26 @@
     if (bannerSlides.length < 2) return;
     bannerTimer = setInterval(() => goToBanner(bannerIndex + 1), 5000);
   }
+  // Deslizar con el dedo en el celular
+  let bannerTouchX = null;
+  el.bannerCarousel.addEventListener("touchstart", e => { bannerTouchX = e.touches[0].clientX; clearInterval(bannerTimer); }, { passive: true });
+  el.bannerCarousel.addEventListener("touchend", e => {
+    if (bannerTouchX !== null) {
+      const dx = e.changedTouches[0].clientX - bannerTouchX;
+      if (Math.abs(dx) > 40 && bannerSlides.length > 1) goToBanner(bannerIndex + (dx < 0 ? 1 : -1));
+      bannerTouchX = null;
+    }
+    startBannerAutoplay();
+  }, { passive: true });
+  // Banner solo imagen con enlace: todo el banner es el botón
+  function openBannerLink(link) {
+    if (link.startsWith("#")) { const t = document.querySelector(link); if (t) { t.scrollIntoView({ behavior: "smooth" }); return; } }
+    if (/^https?:\/\//i.test(link) && !link.startsWith(window.location.origin)) window.open(link, "_blank", "noopener");
+    else window.location.href = link;
+  }
+  el.bannerTrack.addEventListener("click", e => { const s = e.target.closest("[data-link]"); if (s) openBannerLink(s.dataset.link); });
+  el.bannerTrack.addEventListener("keydown", e => { if (e.key === "Enter") { const s = e.target.closest("[data-link]"); if (s) openBannerLink(s.dataset.link); } });
+
   el.bannerPrev.addEventListener("click", () => { goToBanner(bannerIndex - 1); startBannerAutoplay(); });
   el.bannerNext.addEventListener("click", () => { goToBanner(bannerIndex + 1); startBannerAutoplay(); });
 
