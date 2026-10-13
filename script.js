@@ -1907,12 +1907,13 @@
       const hasLink = !!link && link !== "#";
       // Banner con texto propio: foto de fondo + título/botón (como antes)
       if (hasText) {
+        const isCat = link.startsWith("categoria:");
         return `
-      <div class="banner-slide" style="background-image:url('${(b.image || "").replace(/'/g, "\\'")}')">
+      <div class="banner-slide${isCat ? " is-link" : ""}" style="background-image:url('${(b.image || "").replace(/'/g, "\\'")}')"${isCat ? ` data-link="${escA(link)}" role="link" tabindex="0"` : ""}>
         <div class="banner-slide-content">
           ${b.title ? `<h3>${b.title}</h3>` : ""}
           ${b.subtitle ? `<p>${b.subtitle}</p>` : ""}
-          ${b.button_text ? `<a href="${b.button_link || "#"}">${b.button_text}</a>` : ""}
+          ${b.button_text ? `<a href="${isCat ? "#" : (b.button_link || "#")}">${b.button_text}</a>` : ""}
         </div>
       </div>`;
       }
@@ -1957,11 +1958,26 @@
   }, { passive: true });
   // Banner solo imagen con enlace: todo el banner es el botón
   function openBannerLink(link) {
+    // Banner que lleva a una categoría (ej. "categoria:Labios"): se filtra el catálogo sin recargar la página
+    if (link.startsWith("categoria:")) {
+      const cat = link.slice(10).trim() || "Todas";
+      el.resetFilters.click();                 // limpia búsqueda, marca y orden anteriores
+      setSearchInURL("");
+      const pill = Array.from(document.querySelectorAll(".pill")).find(p => p.dataset.cat === cat) || document.querySelector('.pill[data-cat="Todas"]');
+      if (pill) pill.click();
+      el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (link.startsWith("#")) { const t = document.querySelector(link); if (t) { t.scrollIntoView({ behavior: "smooth" }); return; } }
     if (/^https?:\/\//i.test(link) && !link.startsWith(window.location.origin)) window.open(link, "_blank", "noopener");
     else window.location.href = link;
   }
-  el.bannerTrack.addEventListener("click", e => { const s = e.target.closest("[data-link]"); if (s) openBannerLink(s.dataset.link); });
+  el.bannerTrack.addEventListener("click", e => {
+    const s = e.target.closest("[data-link]");
+    if (!s) return;
+    if (e.target.closest("a")) e.preventDefault();      // el botón (si lo hay) también usa el enlace del banner
+    openBannerLink(s.dataset.link);
+  });
   el.bannerTrack.addEventListener("keydown", e => { if (e.key === "Enter") { const s = e.target.closest("[data-link]"); if (s) openBannerLink(s.dataset.link); } });
 
   el.bannerPrev.addEventListener("click", () => { goToBanner(bannerIndex - 1); startBannerAutoplay(); });
