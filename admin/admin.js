@@ -483,6 +483,20 @@
       cats.map(c => `<option value="${c}">${c}</option>`).join("");
     el.adminBrandFilter.innerHTML = '<option value="">Todas las marcas</option>' +
       brands.map(b => `<option value="${b}">${b}</option>`).join("");
+    syncBannerDestCategories();
+  }
+
+  // La lista «Al hacer clic en el banner, ir a» trae las categorías de siempre; aquí se agregan las NUEVAS que existan en los productos (ej. «Kits»).
+  function syncBannerDestCategories() {
+    const group = el.bannerFieldDest && el.bannerFieldDest.querySelector('optgroup[label="Categorías"]');
+    if (!group) return;
+    const ya = new Set(Array.from(group.querySelectorAll("option")).map(o => o.value));
+    const otros = group.querySelector('option[value="categoria:Otros"]');
+    Array.from(new Set(allProducts.map(p => p.category).filter(Boolean))).sort((x, y) => x.localeCompare(y, "es")).forEach(c => {
+      if (ya.has("categoria:" + c)) return;
+      const opt = document.createElement("option"); opt.value = "categoria:" + c; opt.textContent = c;
+      if (otros) group.insertBefore(opt, otros); else group.appendChild(opt);
+    });
   }
 
   // Si ya existe una marca escrita distinto solo en mayúsculas/minúsculas
