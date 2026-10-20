@@ -755,7 +755,7 @@
           <td>${date}</td>
           <td>
             <div class="row-name">${o.customer_name}</div>
-            <div class="row-ref">${o.city}</div>
+            <div class="row-ref">${o.city}${o.customer_cedula ? ` · Cédula ${o.customer_cedula}` : ""}</div>
           </td>
           <td>${o.phone}</td>
           <td>${o.delivery_method}</td>
@@ -818,6 +818,7 @@
     el.orderModalBody.innerHTML = `
       <div class="order-detail-row"><span>Fecha</span><strong>${date}</strong></div>
       <div class="order-detail-row"><span>Cliente</span><strong>${order.customer_name}</strong></div>
+       ${order.customer_cedula ? `<div class="order-detail-row"><span>Cédula / RIF</span><strong>${order.customer_cedula}</strong></div>` : ""}
       <div class="order-detail-row"><span>Teléfono</span><strong>${order.phone}</strong></div>
       <div class="order-detail-row"><span>Ciudad</span><strong>${order.city}</strong></div>
       <div class="order-detail-row"><span>Método de pago</span><strong>${order.payment_method}</strong></div>
