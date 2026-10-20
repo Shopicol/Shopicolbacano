@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://shopicolbacano.vercel.app/sitemap.xml
+Sitemap: https://www.shopicolbacano.com/sitemap.xml
