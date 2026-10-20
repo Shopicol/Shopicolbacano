@@ -50,6 +50,14 @@
     "Brochas y Pinceles", "Capilar", "Cuidado Corporal", "Cuidado Facial",
     "Accesorios", "Otros"
   ];
+  // Las categorías de siempre van en este orden. Cualquier categoría NUEVA que exista en los productos (ej. «Kits»)
+  // aparece sola en los menús, en orden alfabético y justo antes de «Otros». No hace falta tocar esta lista.
+  function orderedCategories(present) {
+    const base = CATEGORY_ORDER.filter(c => c !== "Todas" && present.has(c));
+    const extras = [...present].filter(c => c && !CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, "es"));
+    const i = base.indexOf("Otros");
+    return i === -1 ? [...base, ...extras] : [...base.slice(0, i), ...extras, ...base.slice(i)];
+  }
 
   /* ---------------------------------------------------------------
      1. Referencias al DOM
@@ -310,7 +318,7 @@
 
   function buildCategoryPills() {
     const presentCats = new Set(PRODUCTS.map(p => p.category));
-    const cats = ["Todas", ...CATEGORY_ORDER.filter(c => c !== "Todas" && presentCats.has(c))];
+    const cats = ["Todas", ...orderedCategories(presentCats)];
 
     el.categoryPills.innerHTML = "";
     cats.forEach(cat => {
@@ -337,7 +345,7 @@
     const nav = document.getElementById("categoryNav");
     if (!nav) return;
     const presentCats = new Set(PRODUCTS.map(p => p.category));
-    const cats = CATEGORY_ORDER.filter(c => c !== "Todas" && presentCats.has(c));
+    const cats = orderedCategories(presentCats);
     nav.innerHTML = `<button type="button" data-nav-cat="__home">Inicio</button>` +
       `<button type="button" class="nav-extra" data-nav-act="all">Ver todo</button>` +
       `<button type="button" class="nav-extra" data-nav-act="brands" aria-haspopup="true" aria-expanded="false">Marcas ▾</button>` +
@@ -412,7 +420,7 @@
     if (kind === "categories") {
       const counts = {};
       PRODUCTS.forEach(pr => { counts[pr.category] = (counts[pr.category] || 0) + 1; });
-      const cats = CATEGORY_ORDER.filter(c => c !== "Todas" && counts[c]);
+      const cats = orderedCategories(new Set(Object.keys(counts)));
       html = `<button type="button" role="menuitem" class="mp-item ${state.category === "Todas" ? "active" : ""}" data-pop-cat="Todas"><span>Todas las categorías</span><em>${PRODUCTS.length}</em></button>` +
         cats.map(c => `<button type="button" role="menuitem" class="mp-item ${state.category === c ? "active" : ""}" data-pop-cat="${escapeHtml(c)}"><span>${escapeHtml(c)}</span><em>${counts[c]}</em></button>`).join("");
     } else {
