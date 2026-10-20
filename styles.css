@@ -1446,3 +1446,7 @@ body.is-searching #collectionsContainer{ display:none !important; }
   .banner-nav{ display:none; }          /* en celular se desliza con el dedo */
   .banner-dots{ bottom:6px; }
 }
+
+/* cédula en el pedido */
+.field-hint{ display:block; font-size:12px; color:var(--text-soft, #7a7266); margin-top:4px; line-height:1.4; font-weight:400; }
+.opt{ font-weight:400; font-style:normal; opacity:.7; }

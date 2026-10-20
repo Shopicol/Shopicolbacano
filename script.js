@@ -174,6 +174,7 @@
     checkoutForm: document.getElementById("checkoutForm"),
     checkoutTierNote: document.getElementById("checkoutTierNote"),
     custName: document.getElementById("custName"),
+    custCedulaNum: document.getElementById("custCedulaNum"),
     custPhone: document.getElementById("custPhone"),
     custCity: document.getElementById("custCity"),
     custEmail: document.getElementById("custEmail"),
@@ -1716,6 +1717,29 @@
     el.nationalNote.hidden = val !== "Envío nacional";
   });
 
+
+  /* Cédula o RIF: solo números (6 a 9). Si pegan "V-12.345.678" se limpia sola. */
+  const soloNumeros = v => String(v || "").replace(/\D/g, "");
+  function validarCedula(valor) {
+    const dig = soloNumeros(valor);
+    if (!dig) return { ok: false, msg: "Escribe tu cédula o RIF (solo números)." };
+    if (dig.length < 6) return { ok: false, msg: "Tu cédula o RIF debe tener al menos 6 números. Escríbelo completo, solo números." };
+    if (dig.length > 9) return { ok: false, msg: "Tienes demasiados números: la cédula tiene de 6 a 8 y el RIF 9. Revísalo." };
+    return { ok: true, dig };
+  }
+  if (el.custCedulaNum) el.custCedulaNum.addEventListener("input", () => { el.custCedulaNum.value = soloNumeros(el.custCedulaNum.value).slice(0, 15); });
+
+  // Guarda el pedido. Si la base todavía no tiene la columna de la cédula, se guarda igual y la cédula va en la nota.
+  async function guardarPedido(order) {
+    let { error } = await supabaseClient.from("orders").insert(order);
+    if (error && /customer_cedula/.test(error.message || "")) {
+      const { customer_cedula, ...resto } = order;
+      resto.note = [resto.note, "Cédula: " + customer_cedula].filter(Boolean).join(" · ");
+      ({ error } = await supabaseClient.from("orders").insert(resto));
+    }
+    if (error) console.warn("No se pudo guardar el pedido en Supabase:", error);
+  }
+
   el.checkoutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     el.checkoutError.hidden = true;
@@ -1725,6 +1749,11 @@
       el.checkoutError.textContent = "Tu carrito está vacío.";
       el.checkoutError.hidden = false;
       return;
+    }
+
+    {
+      const v = validarCedula(el.custCedulaNum.value);
+      if (!v.ok) { el.checkoutError.textContent = v.msg; el.checkoutError.hidden = false; el.custCedulaNum.focus(); return; }
     }
 
     const paymentVal = el.custPayment.value;
@@ -1748,6 +1777,7 @@
     }
     const order = {
       customer_name: el.custName.value.trim(),
+      customer_cedula: soloNumeros(el.custCedulaNum.value),
       phone: el.custPhone.value.trim(),
       email: el.custEmail.value.trim(),
       city: el.custCity.value.trim(),
@@ -1770,7 +1800,7 @@
     // Guarda el pedido en el panel de administración (si Supabase está listo)
     if (SUPABASE_READY) {
       try {
-        await supabaseClient.from("orders").insert(order);
+        await guardarPedido(order);
       } catch (err) {
         console.warn("No se pudo guardar el pedido en Supabase:", err);
       }
@@ -1809,6 +1839,7 @@
     }
     lines.push("");
     lines.push(`Nombre: ${order.customer_name}`);
+    if (order.customer_cedula) lines.push(`Cédula: ${order.customer_cedula}`);
     lines.push(`Teléfono: ${order.phone}`);
     lines.push(`Ciudad: ${order.city}`);
     lines.push(`Método de pago: ${order.payment_method}`);
@@ -1863,6 +1894,7 @@
     emailjs.send(cfg.serviceId, cfg.templateId, {
       to_email: cfg.notifyEmail,
       customer_name: order.customer_name,
+      customer_cedula: order.customer_cedula || "—",
       phone: order.phone,
       city: order.city,
       payment_method: order.payment_method,
