@@ -3,173 +3,114 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shopicol Bacano — Lo más bacano para ti</title>
-<meta name="description" id="metaDescription" content="Catálogo Shopicol Bacano: maquillaje, capilares y cuidado personal colombiano al por mayor y detal. Bloom, Purpure, Trendy, Dolce Bella, Pocion, Kaba y más.">
-
-<!-- Vista previa al compartir el link (WhatsApp, Facebook, Instagram, etc.) -->
+<title>Mayoristas de Perfumes Venezuela</title>
+<meta name="description" content="Perfumería al por mayor en Venezuela. Fragancias importadas directo para tu negocio: mínimo 12 perfumes (cajas desde 1 unidad). Pide con tu asesora por WhatsApp.">
+<meta name="theme-color" content="#0C0906">
+<link rel="canonical" href="https://www.mayoristasdeperfumesven.com/">
+<!-- Vista previa al compartir el link (WhatsApp, Instagram, etc.) -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Shopicol Bacano">
-<meta property="og:title" content="Shopicol Bacano — Lo más bacano para ti">
-<meta property="og:description" content="Maquillaje, capilares y cuidado personal colombiano. Compra al detal o al mayor, con envíos en Caracas.">
-<meta property="og:image" content="https://www.shopicolbacano.com/images/og-image.jpg">
+<meta property="og:site_name" content="Mayoristas de Perfumes Venezuela">
+<meta property="og:locale" content="es_VE">
+<meta property="og:title" content="Mayoristas de Perfumes Venezuela">
+<meta property="og:description" content="Perfumería al por mayor: fragancias importadas, mínimo 12 perfumes y cajas desde 1 unidad. Pide con tu asesora.">
+<meta property="og:url" content="https://www.mayoristasdeperfumesven.com/">
+<meta property="og:image" content="https://www.mayoristasdeperfumesven.com/og-image.jpg?v=1">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://www.shopicolbacano.com/">
-<link rel="canonical" href="https://www.shopicolbacano.com/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Shopicol Bacano — Lo más bacano para ti">
-<meta name="twitter:description" content="Maquillaje, capilares y cuidado personal colombiano. Compra al detal o al mayor, con envíos en Caracas.">
-<meta name="twitter:image" content="https://www.shopicolbacano.com/images/og-image.jpg">
-
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-<!-- Tipografías: Fraunces (display, con carácter) + Plus Jakarta Sans (texto/UI) -->
+<meta name="twitter:title" content="Mayoristas de Perfumes Venezuela">
+<meta name="twitter:image" content="https://www.mayoristasdeperfumesven.com/og-image.jpg?v=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Jost:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-
-<!-- Supabase (opcional): si config.js tiene claves reales, el catálogo se
-     lee en vivo desde la nube; si no, se usa el catálogo local automáticamente. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- EmailJS (opcional): envía una notificación por correo cuando llega
-     un pedido nuevo. Si no está configurado en config.js, simplemente no se envía. -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>try{ if (sessionStorage.getItem("mpv_ve_ok") === "1") document.documentElement.classList.add("ve-ok"); }catch(e){}</script>
 </head>
 <body>
 
-<!-- ============ DECORATIVE SPARKLE LAYER (hero) ============ -->
-<div class="sparkle-field" aria-hidden="true">
-  <span class="spark s1">✦</span>
-  <span class="spark s2">✦</span>
-  <span class="spark s3">✦</span>
-  <span class="spark s4">✦</span>
-</div>
-
-<!-- ============ FRANJA SUPERIOR (anuncios en movimiento) ============ -->
-<div class="top-ribbon" aria-hidden="true">
-  <div class="ribbon-track">
-    <span>Tu tienda de maquillaje favorita</span><i>✦</i>
-    <span>Envíos en Caracas</span><i>✦</i>
-    <span>Compra al detal y al mayor</span><i>✦</i>
-    <span>Lo más bacano para ti</span><i>✦</i>
-    <span>Tu tienda de maquillaje favorita</span><i>✦</i>
-    <span>Envíos en Caracas</span><i>✦</i>
-    <span>Compra al detal y al mayor</span><i>✦</i>
-    <span>Lo más bacano para ti</span><i>✦</i>
+<!-- ============ AVISO: SOLO VENDEMOS EN VENEZUELA (se ve una vez por visita) ============ -->
+<div class="ve-overlay" id="veOverlay" role="dialog" aria-modal="true" aria-labelledby="veTitle">
+  <div class="ve-card">
+    <div class="ve-attn"><span aria-hidden="true">⚠</span> ATENCIÓN</div>
+    <div class="ve-body">
+      <svg class="ve-flag" viewBox="0 0 120 80" role="img" aria-label="Bandera de Venezuela"><rect width="120" height="26.67" fill="#FFCC00"/><rect y="26.67" width="120" height="26.67" fill="#00247D"/><rect y="53.33" width="120" height="26.67" fill="#CF142B"/><polygon points="40.30,49.63 40.99,51.59 43.06,51.63 41.41,52.89 42.01,54.87 40.30,53.69 38.60,54.87 39.20,52.89 37.55,51.63 39.62,51.59" fill="#fff"/><polygon points="43.20,42.25 43.88,44.21 45.96,44.25 44.30,45.51 44.90,47.50 43.20,46.31 41.49,47.50 42.10,45.51 40.44,44.25 42.52,44.21" fill="#fff"/><polygon points="48.73,36.58 49.42,38.54 51.49,38.58 49.84,39.83 50.44,41.82 48.73,40.64 47.03,41.82 47.63,39.83 45.98,38.58 48.05,38.54" fill="#fff"/><polygon points="56.04,33.50 56.72,35.46 58.80,35.50 57.14,36.76 57.74,38.74 56.04,37.56 54.33,38.74 54.93,36.76 53.28,35.50 55.36,35.46" fill="#fff"/><polygon points="63.96,33.50 64.64,35.46 66.72,35.50 65.07,36.76 65.67,38.74 63.96,37.56 62.26,38.74 62.86,36.76 61.20,35.50 63.28,35.46" fill="#fff"/><polygon points="71.27,36.58 71.95,38.54 74.02,38.58 72.37,39.83 72.97,41.82 71.27,40.64 69.56,41.82 70.16,39.83 68.51,38.58 70.58,38.54" fill="#fff"/><polygon points="76.80,42.25 77.48,44.21 79.56,44.25 77.90,45.51 78.51,47.50 76.80,46.31 75.10,47.50 75.70,45.51 74.04,44.25 76.12,44.21" fill="#fff"/><polygon points="79.70,49.63 80.38,51.59 82.45,51.63 80.80,52.89 81.40,54.87 79.70,53.69 77.99,54.87 78.59,52.89 76.94,51.63 79.01,51.59" fill="#fff"/></svg>
+      <h2 id="veTitle">SOLO VENDEMOS<br>EN <span>VENEZUELA</span></h2>
+      <p>No realizamos ventas ni envíos a otros países. Los pedidos para entregar fuera de Venezuela no serán atendidos.</p>
+      <button type="button" class="btn-primary" id="veAccept">ENTENDIDO</button>
+    </div>
   </div>
 </div>
 
+<!-- ============ CINTA SUPERIOR (categorías en movimiento) ============ -->
+<div class="brand-marquee">
+  <div class="marquee-track" id="marqueeTrack"><!-- filled by JS --></div>
+</div>
+
 <!-- ============ HEADER ============ -->
-<header class="site-header" id="siteHeader">
+<header class="site-header">
   <div class="header-inner">
-    <a href="#top" class="brand-mark">
-      <img src="logo.png" alt="Shopicol" class="logo-img" id="headerLogoImg">
-      <em class="logo-bacano" id="headerTagline">Bacano</em>
+    <a href="index.html" class="brand-mark">
+      <img src="https://lgslddmymksbukdcmdpd.supabase.co/storage/v1/object/public/product-images/logo-mayoristas-1790878036617.png" alt="Mayoristas de Perfumes Venezuela" class="brand-logo-img">
     </a>
 
     <div class="search-wrap">
-      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <input id="searchInput" type="text" placeholder="Buscar por nombre, marca o referencia…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="searchSuggestions" aria-autocomplete="list">
-      <button id="clearSearch" class="clear-btn" aria-label="Limpiar búsqueda" hidden>✕</button>
-      <div class="search-suggestions" id="searchSuggestions" role="listbox" hidden></div>
+      <span class="search-icon">⚲</span>
+      <input type="text" id="searchInput" placeholder="Buscar por nombre, marca o referencia…">
+      <button class="search-clear" id="searchClear" aria-label="Limpiar búsqueda" hidden>✕</button>
     </div>
 
-    <div class="header-menu" id="headerMenu">
-      <button type="button" class="hm-btn" id="hmCategories" aria-haspopup="true" aria-expanded="false">Categorías <span class="hm-caret">▾</span></button>
-      <button type="button" class="hm-btn" id="hmBrands" aria-haspopup="true" aria-expanded="false">Marcas <span class="hm-caret">▾</span></button>
-      <button type="button" class="hm-btn hm-primary" id="hmAll">Ver todo</button>
+    <div class="header-actions">
+      <button type="button" class="client-btn" id="clientBtn">Soy cliente</button>
+      <button class="icon-btn" id="cartBtn" aria-label="Ver carrito">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 4H5L5.4 6M5.4 6H20L18 13H7M5.4 6L6.8 14H18M18 14L19 4M9 19a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="cart-badge" id="cartBadge" hidden>0</span>
+      </button>
     </div>
-
-    <button class="my-orders-btn" id="myOrdersBtn" aria-label="Ver mis pedidos" title="Mis pedidos">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M4 7L12 3L20 7V17L12 21L4 17V7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M4 7L12 11L20 7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M12 11V21" stroke="currentColor" stroke-width="2"/>
-      </svg>
-    </button>
-
-    <button class="favorites-btn" id="favoritesBtn" aria-label="Ver favoritos" aria-pressed="false">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 7.8 2 4 5.6 4c2.1 0 3.6 1.2 4.4 2.6C10.8 5.2 12.3 4 14.4 4 18 4 19.7 7.8 18 11.2 15.5 15.9 12 20.5 12 20.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-      </svg>
-      <span class="cart-count" id="favoritesCount" hidden>0</span>
-    </button>
-
-    <button class="cart-btn" id="cartBtn" aria-label="Ver carrito de compras">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M3 4H5L5.4 6M5.4 6H20L18 13H7L5.4 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <circle cx="9" cy="19" r="1.6" fill="currentColor"/>
-        <circle cx="17" cy="19" r="1.6" fill="currentColor"/>
-      </svg>
-      <span class="cart-count" id="cartCount" hidden>0</span>
-    </button>
   </div>
 </header>
 
 <!-- ============ BARRA DE CATEGORÍAS ============ -->
 <nav class="category-nav" id="categoryNav" aria-label="Categorías"><!-- filled by JS --></nav>
+<div class="advisor-pill-wrap" id="advisorPillWrap" hidden></div>
 
-<!-- ============ BANNERS PROMOCIONALES ============ -->
-<section class="banner-carousel" id="bannerCarousel" hidden>
-  <div class="banner-track" id="bannerTrack"><!-- slides por JS --></div>
-  <button class="banner-nav prev" id="bannerPrev" aria-label="Slide anterior">‹</button>
-  <button class="banner-nav next" id="bannerNext" aria-label="Slide siguiente">›</button>
-  <div class="banner-dots" id="bannerDots"></div>
-</section>
 
-<main id="top">
+<main>
+  <!-- ============ BANNER / HERO ============ -->
+  <section class="banner-carousel" id="bannerCarousel" hidden>
+    <div class="banner-track" id="bannerTrack"><!-- slides por JS --></div>
+    <button class="banner-nav prev" id="bannerPrev" aria-label="Slide anterior">‹</button>
+    <button class="banner-nav next" id="bannerNext" aria-label="Slide siguiente">›</button>
+    <div class="banner-dots" id="bannerDots"></div>
+  </section>
 
-  <!-- ============ RECORDATORIO DE CARRITO PENDIENTE ============ -->
-  <div class="cart-reminder" id="cartReminder" hidden>
-    <div class="cart-reminder-inner">
-      <span class="cart-reminder-icon">🛍️</span>
-      <p class="cart-reminder-text" id="cartReminderText"></p>
-      <div class="cart-reminder-actions">
-        <button class="cart-reminder-btn" id="cartReminderResume">Continuar pedido</button>
-        <button class="cart-reminder-close" id="cartReminderClose" aria-label="Cerrar">✕</button>
-      </div>
+  <!-- ============ FRANJA DE CONFIANZA (los textos se completan solos con los datos reales de la tienda) ============ -->
+  <section class="trust-strip" id="trustStrip" aria-label="Por qué comprar con nosotros">
+    <div class="trust-item">
+      <svg class="trust-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>
+      <div class="trust-text"><strong>Envíos a toda Venezuela</strong><span>Envío nacional, delivery y pickup</span></div>
     </div>
-  </div>
-
-  <!-- ============ HERO ============ -->
-  <section class="hero">
-    <!-- Marquee de marcas: elemento distintivo, como una pared de stickers -->
-    <div class="brand-marquee" aria-hidden="true">
-      <div class="marquee-track" id="marqueeTrack"><!-- filled by JS --></div>
+    <div class="trust-item">
+      <svg class="trust-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/></svg>
+      <div class="trust-text"><strong>Pago protegido</strong><span id="trustPay">Pago Móvil, Binance o efectivo</span></div>
+    </div>
+    <div class="trust-item">
+      <svg class="trust-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>
+      <div class="trust-text"><strong>Atención por WhatsApp</strong><em class="trust-chip" id="trustChatChip" hidden></em><span id="trustChat">Asesoras que te acompañan en tu pedido</span></div>
+    </div>
+    <div class="trust-item">
+      <svg class="trust-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8L12 4l8.5 4v8L12 20l-8.5-4z"/><path d="M3.5 8L12 12l8.5-4M12 12v8"/></svg>
+      <div class="trust-text"><strong>Desde 12 perfumes</strong><span id="trustMin">Surtido a tu gusto, de cualquier referencia</span></div>
     </div>
   </section>
 
-  <!-- ============ RECIÉN LLEGADO (4 productos más recientes) ============ -->
-  <section class="featured-section" id="recentSection" hidden>
-    <h2 class="featured-title">✦ Recién llegado ✦</h2>
-    <div class="featured-scroll-wrap">
-      <button class="scroll-arrow prev" aria-label="Ver anteriores">‹</button>
-      <div class="featured-scroll" id="recentScroll"><!-- filled by JS --></div>
-      <button class="scroll-arrow next" aria-label="Ver siguientes">›</button>
-    </div>
-  </section>
+  <!-- Espacio de categorías (se ve mientras no haya banners cargados en el admin) -->
+  <section class="category-tiles" id="categoryTiles" hidden></section>
 
-  <!-- ============ VISTOS RECIENTEMENTE (personalizado, por navegador) ============ -->
-  <section class="featured-section" id="recentlyViewedSection" hidden>
-    <h2 class="featured-title">✦ Vistos recientemente ✦</h2>
-    <div class="featured-scroll-wrap">
-      <button class="scroll-arrow prev" aria-label="Ver anteriores">‹</button>
-      <div class="featured-scroll" id="recentlyViewedScroll"><!-- filled by JS --></div>
-      <button class="scroll-arrow next" aria-label="Ver siguientes">›</button>
-    </div>
-  </section>
-
-  <!-- ============ DESTACADOS Y EN OFERTA ============ -->
+  <!-- ============ DESTACADOS ============ -->
   <section class="featured-section" id="featuredSection" hidden>
-    <h2 class="featured-title">✦ Destacados y en oferta ✦</h2>
+    <h2 class="featured-title">Destacados</h2>
     <div class="featured-scroll-wrap">
       <button class="scroll-arrow prev" aria-label="Ver anteriores">‹</button>
       <div class="featured-scroll" id="featuredScroll"><!-- filled by JS --></div>
@@ -177,78 +118,70 @@
     </div>
   </section>
 
-  <!-- ============ COLECCIONES CURADAS ============ -->
-  <div id="collectionsContainer"><!-- una .featured-section por colección, filled by JS --></div>
-
-  <!-- ============ FILTER BAR ============ -->
-  <section class="filter-bar" id="filterBar">
-    <div class="filter-bar-inner">
-      <div class="pills-row" id="categoryPills"><!-- filled by JS --></div>
-
-      <div class="filter-controls">
-        <select id="brandSelect" class="select-control" aria-label="Filtrar por marca">
-          <option value="">Todas las marcas</option>
-        </select>
-
-        <select id="sortSelect" class="select-control" aria-label="Ordenar">
-          <option value="relevance">Orden: catálogo</option>
-          <option value="price-asc">Precio: menor a mayor</option>
-          <option value="price-desc">Precio: mayor a menor</option>
-          <option value="name-asc">Nombre: A–Z</option>
-        </select>
-      </div>
+  <!-- ============ FILTROS ============ -->
+  <div class="filter-bar">
+    <div class="filter-chips" id="categoryChips"><!-- filled by JS --></div>
+    <div class="filter-right">
+      <select id="brandSelect" class="filter-select">
+        <option value="">Todas las marcas</option>
+      </select>
+      <select id="sortSelect" class="filter-select">
+        <option value="relevance">Orden: catálogo</option>
+        <option value="price-asc">Precio: menor a mayor</option>
+        <option value="price-desc">Precio: mayor a menor</option>
+        <option value="name-asc">Nombre: A-Z</option>
+      </select>
     </div>
-    <p class="results-count" id="resultsCount" aria-live="polite"></p>
-  </section>
+  </div>
 
-  <!-- ============ PRODUCT GRID ============ -->
-  <section class="catalog-section">
-    <div id="productGrid" class="product-grid"><!-- filled by JS --></div>
-    <div id="emptyState" class="empty-state" hidden>
-      <p class="empty-star">✦</p>
-      <h3>No encontramos nada bacano con esos filtros</h3>
-      <p>Prueba con otra palabra, cambia de categoría o quita algún filtro.</p>
-      <button id="resetFilters" class="reset-btn">Ver todo el catálogo</button>
-    </div>
-  </section>
+  <p class="results-count" id="resultsCount"></p>
 
+  <!-- ============ GRID DE PRODUCTOS ============ -->
+  <section class="product-grid" id="productGrid"><!-- filled by JS --></section>
+  <p class="empty-state" id="emptyState" hidden>No encontramos productos con esos filtros.</p>
 </main>
 
-<!-- ============ MODAL / LIGHTBOX DE PRODUCTO ============ -->
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
-    <div class="modal-img-wrap">
-      <img id="modalImg" src="" alt="">
-      <span class="modal-stamp" id="modalStamp" hidden>Agotado</span>
-      <button class="modal-gallery-nav prev" id="modalGalleryPrev" aria-label="Foto anterior" hidden>‹</button>
-      <button class="modal-gallery-nav next" id="modalGalleryNext" aria-label="Foto siguiente" hidden>›</button>
-      <p class="modal-tone-hint" id="modalToneHint" hidden>No te preocupes si este producto no tiene tono o variación: al enviar tu pedido por WhatsApp, la asesora te preguntará por el tono.</p>
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="https://lgslddmymksbukdcmdpd.supabase.co/storage/v1/object/public/product-images/logo-mayoristas-1790878036617.png" alt="Mayoristas de Perfumes Venezuela" class="footer-logo-img">
     </div>
-    <div class="modal-thumbs" id="modalThumbs" hidden><!-- filled by JS --></div>
+    <p class="footer-note">Fragancias al mayor y al detal. Pedidos por WhatsApp.</p>
+    <div class="footer-social">
+      <a href="https://instagram.com/mayoristasdeperfumesven" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor"/></svg>
+        <span>Instagram</span>
+      </a>
+      <a href="https://www.tiktok.com/@mayoristasdeperfumesvzla" target="_blank" rel="noopener" class="footer-social-btn" aria-label="TikTok">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 3c.4 2.3 2 4 4.5 4.2V10c-1.6.1-3.1-.4-4.5-1.3v6.6a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3h2.7z" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+        <span>TikTok</span>
+      </a>
+      <button type="button" id="footerWhatsappBtn" class="footer-social-btn" aria-label="WhatsApp">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2z" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8.3c.2-.5.5-.5.7-.5h.5c.2 0 .4 0 .6.4.2.5.6 1.5.6 1.6.1.1.1.3 0 .4-.1.2-.1.3-.3.4-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.3 1.8 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1.2-.2.7-.8.9-1 .2-.2.3-.2.6-.1.2.1 1.5.7 1.8.8.3.1.4.2.5.3.1.2.1.9-.2 1.6-.3.7-1.6 1.4-2.2 1.4-.6.1-1.1.1-3.7-1.5-3.1-1.9-5-5.2-5.2-5.5-.1-.2-1-1.4-1-2.6 0-1.2.6-1.8.8-2.1z" fill="currentColor"/></svg>
+        <span>WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ MODAL: VISTA RÁPIDA DE PRODUCTO ============ -->
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-card product-modal">
+    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    <div class="modal-media">
+      <img src="" alt="" id="modalImage">
+      <span class="modal-stamp" id="modalStamp" hidden>Agotado</span>
+    </div>
     <div class="modal-body">
       <p class="modal-brand" id="modalBrand"></p>
-      <h3 id="modalTitle"></h3>
+      <h2 class="modal-name" id="modalName"></h2>
       <p class="modal-ref" id="modalRef"></p>
-      <div class="modal-prices">
-        <div class="price-box detal">
-          <span>Detal</span>
-          <strong id="modalDetal"></strong>
-        </div>
-        <div class="price-box mayor">
-          <span>Mayor</span>
-          <strong id="modalMayor"></strong>
-        </div>
+      <div class="modal-price-row">
+        <span class="modal-price" id="modalPrice"></span>
+        <span class="modal-price-old" id="modalPriceOld" hidden></span>
       </div>
-      <p class="modal-offer" id="modalOffer" hidden></p>
-      <p class="modal-stock-note" id="modalStockNote" hidden></p>
-      <p class="modal-category" id="modalCategory"></p>
-
-      <div class="modal-tones" id="modalTones" hidden>
-        <span class="modal-tones-label">Elige un tono:</span>
-        <div class="tone-chips" id="toneChips"><!-- filled by JS --></div>
-      </div>
-
+      <p class="modal-min-qty-note" id="modalMinQtyNote" hidden></p>
       <div class="modal-cart-row">
         <div class="qty-stepper">
           <button type="button" id="modalQtyMinus" aria-label="Restar">−</button>
@@ -257,124 +190,102 @@
         </div>
         <button class="btn-add-cart" id="modalAddCart">Agregar al carrito</button>
       </div>
+      <div class="modal-description" id="modalDescription" hidden>
+        <h3>Detalle</h3>
+        <p id="modalDescriptionText"></p>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ============ CARRITO (panel lateral) ============ -->
 <div class="cart-overlay" id="cartOverlay" hidden>
-  <aside class="cart-panel" role="dialog" aria-label="Carrito de compras">
+  <div class="cart-panel">
     <div class="cart-header">
-      <h3>Tu carrito</h3>
-      <button class="modal-close" id="cartClose" aria-label="Cerrar carrito">✕</button>
+      <h2>Tu carrito</h2>
+      <button class="modal-close" id="cartClose" aria-label="Cerrar">✕</button>
     </div>
-
     <div class="cart-items" id="cartItems"><!-- filled by JS --></div>
-
-    <div class="cart-empty" id="cartEmptyState">
-      <p class="empty-star">✦</p>
-      <p>Tu carrito está vacío.</p>
-    </div>
-
+    <p class="cart-min-progress" id="cartMinProgress" hidden></p>
+    <p class="cart-empty" id="cartEmpty" hidden>Tu carrito está vacío.</p>
     <div class="cart-footer" id="cartFooter" hidden>
-      <div class="mayor-progress" id="mayorProgress">
-        <div class="mayor-progress-bar"><div class="mayor-progress-fill" id="mayorProgressFill"></div></div>
-        <p class="mayor-progress-text" id="mayorProgressText"></p>
-      </div>
-
-      <div class="coupon-row">
-        <input type="text" id="couponInput" placeholder="¿Tienes un cupón?" autocomplete="off">
-        <button type="button" id="couponApplyBtn">Aplicar</button>
-      </div>
-      <p class="coupon-message" id="couponMessage" hidden></p>
-
-      <div class="cart-total-row cart-subtotal-row" id="cartSubtotalRow" hidden>
-        <span>Subtotal</span>
-        <span id="cartSubtotal">$0</span>
-      </div>
-      <div class="cart-total-row cart-discount-row" id="cartDiscountRow" hidden>
-        <span>Descuento <span id="cartCouponCodeLabel"></span></span>
-        <span id="cartDiscountAmount">-$0</span>
-      </div>
       <div class="cart-total-row">
-        <span>Total (<span id="cartPriceModeLabel">Detal</span>)</span>
-        <strong id="cartTotal">$0</strong>
+        <span>Total</span>
+        <strong id="cartTotal">$0.00</strong>
       </div>
-      <p class="cart-bs-note" id="cartBsNote" hidden></p>
       <button class="btn-primary btn-block" id="checkoutBtn">Continuar pedido</button>
     </div>
-  </aside>
+  </div>
 </div>
 
-<!-- ============ AVÍSAME CUANDO VUELVA ============ -->
-<div class="modal-overlay" id="notifyModalOverlay" hidden>
-  <div class="modal-card notify-card">
-    <button class="modal-close" id="notifyModalClose" aria-label="Cerrar">✕</button>
-    <div class="notify-emoji">🔔</div>
-    <h2>Avísame cuando vuelva</h2>
-    <p class="notify-product-name" id="notifyProductName"></p>
-    <form id="notifyForm">
-      <label>
-        <span>Tu WhatsApp</span>
-        <input type="tel" id="notifyPhone" required placeholder="Ej: 0412 1234567">
-      </label>
-      <button type="submit" class="btn-primary btn-block" id="notifySubmitBtn">Avísenme</button>
+<!-- ============ CHECKOUT ============ -->
+<!-- Ventana al elegir "Pagar después" -->
+<div class="modal-overlay paylater-overlay" id="payLaterOverlay" hidden>
+  <div class="paylater-card" role="dialog" aria-modal="true" aria-labelledby="payLaterTitle">
+    <div class="paylater-icon">⏳</div>
+    <h3 id="payLaterTitle">Los pedidos que van pagos salen antes</h3>
+    <p>Puedes dejar tu pedido registrado y pagar después, pero <strong>los pedidos con pago se atienden primero</strong>.</p>
+    <div class="paylater-actions">
+      <button type="button" class="btn-primary" id="payLaterNow">Prefiero pagar ahora</button>
+      <button type="button" class="paylater-ok" id="payLaterOk">Entendido, pagar después</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SOY CLIENTE: ver mis pedidos ============ -->
+<div class="modal-overlay" id="clientOverlay" hidden>
+  <div class="modal-card client-card" role="dialog" aria-modal="true" aria-labelledby="clientTitle">
+    <button class="modal-close" id="clientClose" aria-label="Cerrar">✕</button>
+    <h2 id="clientTitle">Mis pedidos</h2>
+    <p class="checkout-sub">Escribe tu cédula y tu teléfono (los mismos de tu pedido) para ver tu historial.</p>
+    <form id="clientForm" class="client-form">
+      <label><span>Cédula o RIF <em class="opt">(solo números)</em></span><input type="text" id="clientCedulaNum" required inputmode="numeric" maxlength="15" autocomplete="off" placeholder="Ej: 12345678"></label>
+      <label><span>Teléfono</span><input type="tel" id="clientPhone" required placeholder="Ej: 0412 1234567"></label>
+      <button class="btn-primary btn-block" type="submit" id="clientSubmit">Ver mis pedidos</button>
+      <p class="client-msg" id="clientMsg" hidden></p>
     </form>
-    <p class="notify-message" id="notifyMessage" hidden></p>
+    <div class="client-results" id="clientResults" hidden></div>
+    <p class="client-privacy">Solo mostramos tus productos, totales y estado. Nunca mostramos direcciones ni teléfonos.</p>
   </div>
 </div>
 
-<!-- ============ MIS PEDIDOS ============ -->
-<div class="modal-overlay" id="myOrdersOverlay" hidden>
-  <div class="modal-card my-orders-card">
-    <button class="modal-close" id="myOrdersClose" aria-label="Cerrar">✕</button>
-    <h2>📦 Mis pedidos</h2>
-    <p class="my-orders-sub">Escribe el número con el que hiciste tu(s) pedido(s).</p>
-    <form id="myOrdersForm">
-      <input type="tel" id="myOrdersPhone" required placeholder="Ej: 0412 1234567">
-      <button type="submit" id="myOrdersSearchBtn">Buscar</button>
-    </form>
-    <p class="my-orders-message" id="myOrdersMessage" hidden></p>
-    <div id="myOrdersResults" class="my-orders-results"></div>
-  </div>
-</div>
-
-<!-- ============ OFERTA ADICIONAL (upsell antes del checkout) ============ -->
-<div class="modal-overlay" id="upsellOverlay" hidden>
-  <div class="modal-card upsell-card">
-    <button class="modal-close" id="upsellClose" aria-label="Cerrar">✕</button>
-    <div class="upsell-emoji">✨</div>
-    <h2 id="upsellTitle">¡Bedazzled tu compra! ✨</h2>
-    <p class="upsell-description" id="upsellDescription"></p>
-    <button class="btn-primary btn-block" id="upsellAcceptBtn"></button>
-    <button class="upsell-decline" id="upsellDeclineBtn">No, gracias</button>
-  </div>
-</div>
-
-<!-- ============ CHECKOUT: datos del cliente ============ -->
 <div class="modal-overlay" id="checkoutOverlay" hidden>
   <div class="modal-card checkout-card">
     <button class="modal-close" id="checkoutClose" aria-label="Cerrar">✕</button>
     <h2>Completa tu pedido</h2>
     <p class="checkout-sub">Con estos datos armamos tu pedido y te contactamos por WhatsApp para confirmar.</p>
 
-    <form id="checkoutForm" class="checkout-form">
-      <div class="checkout-fields-scroll">
-        <p class="checkout-tier-note" id="checkoutTierNote"></p>
-        <p class="checkout-upsell-note" id="checkoutUpsellNote" hidden></p>
-        <p class="checkout-bs-note" id="checkoutBsNote" hidden></p>
+    <div class="advisor-step" id="advisorStep">
+      <!-- el cliente ya tenía una asesora recordada: se le pide confirmar (nunca se asigna en silencio) -->
+      <div class="advisor-confirm" id="advisorConfirm" hidden>
+        <p class="advisor-question">La última vez te atendió <strong id="advisorConfirmName"></strong>. ¿Quieres seguir con ella?</p>
+        <div class="advisor-yesno">
+          <button type="button" id="advisorConfirmYes">Sí, con ella</button>
+          <button type="button" id="advisorConfirmOther">Elegir otra asesora</button>
+        </div>
+      </div>
+      <div class="advisor-ask" id="advisorAsk">
+        <p class="advisor-question">¿Ya tienes una asesora de ventas?</p>
+        <div class="advisor-yesno">
+          <button type="button" id="advisorYesBtn">Sí, ya tengo una</button>
+          <button type="button" id="advisorNoBtn">No, asígname una</button>
+        </div>
+      </div>
+      <div class="advisor-list" id="advisorList" hidden><!-- filled by JS --></div>
+    </div>
 
+    <form id="checkoutForm" class="checkout-form" hidden>
+      <p class="advisor-chosen-tag" id="advisorChosenTag" hidden></p>
+      <div class="checkout-fields-scroll">
         <label>
           <span>Nombre completo *</span>
           <input type="text" id="custName" required placeholder="Ej: María Pérez">
         </label>
-
         <label>
           <span>Cédula o RIF * <em class="opt">(solo números)</em></span>
           <input type="text" id="custCedulaNum" required inputmode="numeric" maxlength="15" autocomplete="off" placeholder="Ej: 12345678">
-          <small class="field-hint">Sin letras, puntos ni guiones. Solo la ve nuestro equipo.</small>
+          <small class="field-hint">Sin letras, puntos ni guiones. Solo la ve tu asesora; sirve para identificarte y poder ver tus pedidos.</small>
         </label>
-
         <div class="form-row two">
           <label>
             <span>Teléfono *</span>
@@ -385,128 +296,72 @@
             <input type="text" id="custCity" required placeholder="Ej: Caracas">
           </label>
         </div>
-
         <label>
           <span>Correo (opcional)</span>
           <input type="email" id="custEmail" placeholder="Ej: maria@ejemplo.com">
         </label>
-
         <label>
           <span>Método de pago *</span>
           <select id="custPayment" required>
             <option value="">Selecciona una opción</option>
             <option value="Pago móvil">Pago móvil</option>
-            <option value="Efectivo en Caracas">Efectivo en Caracas</option>
             <option value="Binance">Binance</option>
             <option value="Zelle">Zelle</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Pagar después">Pagar después</option>
           </select>
         </label>
-
         <div class="payment-details-box" id="paymentDetailsBox" hidden></div>
-
-        <label id="cashPhotoField" hidden>
-          <span id="cashPhotoLabel">Foto del comprobante de pago *</span>
-          <input type="file" id="cashPhotoInput" accept="image/*">
-          <small id="cashPhotoStatus"></small>
+        <label id="payRefWrap" hidden>
+          <span>Número de referencia del pago *</span>
+          <input type="text" id="custPayRef" placeholder="Ej: 123456">
+          <small class="field-hint">Si aún no has pagado, elige «Pagar después».</small>
         </label>
+        <label id="payProofWrap" hidden>
+          <span>Comprobante de pago <em class="opt">(opcional)</em></span>
+          <input type="file" id="custPayProof" accept="image/*">
+          <small class="field-hint">Una foto o captura de tu pago. Solo la ve tu asesora.</small>
+        </label>
+        <div class="pay-later-note" id="payLaterNote" hidden>
+          <strong>Los pedidos que van pagos salen antes.</strong>
+          Puedes pagar después: tu pedido queda registrado y, cuando pagues, avísale a tu asesora por WhatsApp.
+        </div>
 
         <label>
           <span>Método de entrega *</span>
           <select id="custDelivery" required>
             <option value="">Selecciona una opción</option>
             <option value="Delivery">Delivery</option>
-            <option value="Pickup en Caracas">Pickup en Caracas</option>
-            <option value="Envío nacional">Envío nacional (cobro a destino)</option>
+            <option value="Pickup">Retiro en punto físico</option>
+            <option value="Envío nacional">Envío nacional</option>
           </select>
         </label>
-
         <label id="addressField" hidden>
           <span>Dirección de entrega *</span>
           <textarea id="custAddress" rows="2" placeholder="Referencia, urbanización, calle, casa/apto…"></textarea>
         </label>
-
-        <p class="delivery-fee-note" id="deliveryFeeNote" hidden>
-          🛵 El monto del delivery lo consultas por WhatsApp.
-        </p>
-
-        <p class="pickup-note" id="pickupNote" hidden>
-          📍 Retira tu pedido en nuestro punto en Caracas — te compartimos la dirección exacta por WhatsApp al confirmar.
-        </p>
-
-        <label id="nationalNote" hidden>
-          <span>Nota para el envío nacional (opcional)</span>
-          <textarea id="custNote" rows="2" placeholder="Empresa de encomienda de tu preferencia, agencia, etc."></textarea>
-        </label>
       </div>
-
-      <div class="checkout-form-footer">
-        <p class="form-error" id="checkoutError" hidden></p>
-        <button type="submit" class="btn-primary btn-block btn-submit-order" id="submitOrderBtn">Enviar pedido por WhatsApp</button>
-      </div>
+      <label class="check-inline">
+        <input type="checkbox" id="custHideName">
+        <span>No mostrar mi nombre en los avisos de compras recientes</span>
+      </label>
+      <button class="btn-primary btn-block" id="submitOrderBtn" type="submit">Enviar pedido por WhatsApp</button>
+      <p class="checkout-error" id="checkoutError" hidden></p>
     </form>
 
     <div class="checkout-success" id="checkoutSuccess" hidden>
-      <p class="empty-star">✦</p>
-      <h3>¡Pedido enviado!</h3>
-      <p>Se abrió WhatsApp con tu pedido listo para enviar. En cuanto lo confirmes, nos pondremos en contacto contigo.</p>
-      <button class="btn-primary" id="checkoutDoneBtn">Cerrar</button>
+      <h3>¡Pedido enviado! 🎉</h3>
+      <p id="successLead">Te vamos a escribir por WhatsApp para confirmar tu pedido.</p>
+      <p class="success-hours" id="successHours" hidden></p>
+      <p class="success-schedule" id="successSchedule" hidden></p>
+      <button class="btn-primary" id="closeSuccessBtn">Cerrar</button>
     </div>
   </div>
 </div>
 
-<!-- ============ CONTÁCTANOS ============ -->
-<section class="contact-section" id="contactSection">
-  <h2 class="contact-title" id="contactTitle">✦ Contáctanos ✦</h2>
-  <p class="contact-sub" id="contactSubtitle">¿Tienes dudas sobre un producto o tu pedido? Escríbenos por cualquiera de estos medios.</p>
-  <div class="contact-links" id="contactLinks"><!-- filled by JS --></div>
-</section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <img src="logo.png" alt="Shopicol" class="logo-img footer-logo-img" id="footerLogoImg">
-      <em class="logo-bacano footer-logo-bacano" id="footerTagline">Bacano</em>
-      <p id="footerDescription">Productos colombianos de buena calidad, a un buen precio. ¡Llegaste al lugar indicado!</p>
-    </div>
-
-    <div class="footer-col">
-      <h4>Modalidad de compra</h4>
-      <ul>
-        <li><strong>Detal:</strong> escoge como gustes, sin mínimo de monto ni de piezas.</li>
-        <li><strong>Mayor:</strong> compras desde $50 en adelante (por monto, no por cantidad).</li>
-      </ul>
-    </div>
-
-    <div class="footer-col">
-      <h4>Marcas en catálogo</h4>
-      <p id="footerBrandsList" class="footer-brands-text"></p>
-    </div>
-  </div>
-  <p class="footer-bottom" id="footerBottom">Catálogo generado a partir del PDF original de Shopicol Bacano · Gracias por preferirnos ✦</p>
-</footer>
-
-<script src="products.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="supabase-client.js"></script>
-
-<!-- Google Analytics (opcional): solo se activa si GA_MEASUREMENT_ID
-     tiene un ID real en config.js. Se carga de forma condicional para
-     no hacer peticiones innecesarias si no está configurado. -->
-<script>
-  if (typeof GA_MEASUREMENT_ID !== "undefined" && GA_MEASUREMENT_ID && !GA_MEASUREMENT_ID.includes("PEGA_AQUI")) {
-    var gaScript = document.createElement("script");
-    gaScript.async = true;
-    gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_MEASUREMENT_ID;
-    document.head.appendChild(gaScript);
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
-    window.gtag = gtag;
-    gtag("js", new Date());
-    gtag("config", GA_MEASUREMENT_ID);
-  }
-</script>
-
 <script src="script.js"></script>
 </body>
 </html>
