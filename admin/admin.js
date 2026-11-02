@@ -22,6 +22,7 @@
     adminApp: document.getElementById("adminApp"),
     adminUserEmail: document.getElementById("adminUserEmail"),
     logoutBtn: document.getElementById("logoutBtn"),
+    backupBtn: document.getElementById("backupBtn"),
 
     statTotal: document.getElementById("statTotal"),
     statAvail: document.getElementById("statAvail"),
@@ -2435,6 +2436,111 @@
     showToast(`${inserted} productos cargados correctamente`);
     await loadProducts();
   });
+
+  /* ---------------------------------------------------------------
+     Respaldo: descarga un Excel con TODAS las tablas del negocio.
+     Cada tabla va en su propia hoja, con todas sus columnas. Si una
+     tabla falla, las demás se respaldan igual y se avisa cuál falló.
+     --------------------------------------------------------------- */
+  const BACKUP_TABLES = [
+    { table: "products", sheet: "Productos" },
+    { table: "orders", sheet: "Pedidos" },
+    { table: "banners", sheet: "Banners" },
+    { table: "coupons", sheet: "Cupones" },
+    { table: "reviews", sheet: "Resenas" },
+    { table: "stock_notifications", sheet: "Avisame" },
+    { table: "brand_logos", sheet: "Logos" },
+    { table: "collections", sheet: "Colecciones" },
+    { table: "site_settings", sheet: "Ajustes" },
+  ];
+
+  // Supabase entrega máximo 1000 filas por consulta: se pide por páginas
+  // hasta traer todo, para que el respaldo nunca quede incompleto.
+  async function fetchAllRows(table) {
+    const pageSize = 1000;
+    const all = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabaseClient
+        .from(table).select("*").order("id", { ascending: true }).range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      all.push(...(data || []));
+      if (!data || data.length < pageSize) break;
+    }
+    return all;
+  }
+
+  // Convierte listas y objetos (galerías, productos de un pedido) en texto
+  // legible, y recorta lo que exceda el límite de una celda de Excel.
+  function flattenForExcel(rows) {
+    return rows.map(row => {
+      const flat = {};
+      Object.keys(row).forEach(key => {
+        let v = row[key];
+        if (Array.isArray(v) && v.every(x => x === null || typeof x !== "object")) v = v.join(", ");
+        else if (v !== null && typeof v === "object") v = JSON.stringify(v);
+        if (typeof v === "string" && v.length > 32000) v = v.slice(0, 32000);
+        flat[key] = v;
+      });
+      return flat;
+    });
+  }
+
+  async function downloadBackup() {
+    if (typeof XLSX === "undefined") {
+      showToast("No se pudo cargar el lector de Excel. Revisa tu conexión a internet.", true);
+      return;
+    }
+    el.backupBtn.disabled = true;
+    const originalLabel = el.backupBtn.textContent;
+    el.backupBtn.textContent = "Preparando respaldo…";
+
+    try {
+      const workbook = XLSX.utils.book_new();
+      const summary = [];
+      let failed = 0;
+
+      for (const { table, sheet } of BACKUP_TABLES) {
+        try {
+          const rows = await fetchAllRows(table);
+          const flat = flattenForExcel(rows);
+          const ws = flat.length ? XLSX.utils.json_to_sheet(flat) : XLSX.utils.aoa_to_sheet([["(sin datos)"]]);
+          XLSX.utils.book_append_sheet(workbook, ws, sheet);
+          summary.push({ Tabla: table, Hoja: sheet, Filas: rows.length, Estado: "OK" });
+        } catch (err) {
+          failed++;
+          summary.push({ Tabla: table, Hoja: sheet, Filas: 0, Estado: "ERROR: " + err.message });
+        }
+      }
+
+      const now = new Date();
+      const stamp = now.toISOString().slice(0, 10);
+      const summaryRows = [
+        ["Respaldo generado", now.toLocaleString("es-VE")],
+        ["Sitio", window.location.origin],
+        ["Aviso", "Contiene datos de clientes (nombres, teléfonos, direcciones). Guárdalo en un lugar seguro y no lo compartas."],
+        [],
+        ["Tabla", "Hoja", "Filas", "Estado"],
+        ...summary.map(r => [r.Tabla, r.Hoja, r.Filas, r.Estado]),
+      ];
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+      summarySheet["!cols"] = [{ wch: 22 }, { wch: 28 }, { wch: 8 }, { wch: 40 }];
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen");
+      // la hoja Resumen va primero
+      workbook.SheetNames = ["Resumen", ...workbook.SheetNames.filter(n => n !== "Resumen")];
+
+      XLSX.writeFile(workbook, `respaldo-shopicol-${stamp}.xlsx`);
+
+      if (failed) showToast(`Respaldo descargado, pero ${failed} tabla(s) no se pudieron leer. Revisa la hoja "Resumen".`, true);
+      else showToast("Respaldo descargado. Contiene datos de clientes: guárdalo en un lugar seguro.");
+    } catch (err) {
+      showToast("No se pudo generar el respaldo: " + err.message, true);
+    } finally {
+      el.backupBtn.disabled = false;
+      el.backupBtn.textContent = originalLabel;
+    }
+  }
+
+  el.backupBtn.addEventListener("click", downloadBackup);
 
   /* ---------------------------------------------------------------
      Init
