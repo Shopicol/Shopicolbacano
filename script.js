@@ -625,12 +625,12 @@
           <h3 class="card-name">${p.name}</h3>
           <p class="card-ref">${p.ref ? "Ref: " + p.ref : "Sin referencia"}</p>
           <div class="card-prices">
-            <div class="price-chip detal">
-              <span>Detal</span>
-              <strong>${money(p.detal)}</strong>
+            <div class="price-chip detal${mayorAll() ? " struck" : ""}">
+              <span>${mayorAll() ? "Antes" : "Detal"}</span>
+              <strong>${mayorAll() ? `<s>${money(p.detal)}</s>` : money(p.detal)}</strong>
             </div>
-            <div class="price-chip mayor">
-              <span>Mayor</span>
+            <div class="price-chip mayor${mayorAll() ? " hot" : ""}">
+              <span>${mayorAll() ? "Tu precio" : "Mayor"}</span>
               <strong>${money(p.mayor)}</strong>
             </div>
           </div>
@@ -767,7 +767,9 @@
     el.modalBrand.textContent = p.brand;
     el.modalTitle.textContent = p.name;
     el.modalRef.textContent = p.ref ? `Referencia: ${p.ref}` : "Referencia no especificada";
-    el.modalDetal.textContent = money(p.detal);
+    if (mayorAll()) { el.modalDetal.innerHTML = `<s>${money(p.detal)}</s>`; el.modalDetal.previousElementSibling.textContent = "Antes"; el.modalMayor.previousElementSibling.textContent = "Tu precio"; }
+    else { el.modalDetal.textContent = money(p.detal); el.modalDetal.previousElementSibling.textContent = "Detal"; el.modalMayor.previousElementSibling.textContent = "Mayor"; }
+    el.modalDetal.parentElement.classList.toggle("struck", mayorAll()); el.modalMayor.parentElement.classList.toggle("hot", mayorAll());
     el.modalMayor.textContent = money(p.mayor);
     el.modalCategory.textContent = p.category;
 
@@ -1081,6 +1083,9 @@
   // completo pasa automáticamente a precio Mayor — "no es por cantidad
   // de piezas, sino por monto", tal como indica el catálogo original.
   const MAYOR_THRESHOLD = 50;
+  // Interruptor del admin: "Precio Mayor para todos". Con él encendido todo el catálogo va a precio Mayor (y el Detal sale tachado).
+  const mayorAll = () => !!(siteSettings && siteSettings.mayor_all_enabled);
+  const mayorAllMin = () => Number(siteSettings && siteSettings.mayor_all_min) || 0;
   let cart = loadCart();
   const cartHadItemsOnLoad = Object.keys(cart).length > 0;
   let siteSettings = null;
@@ -1147,7 +1152,7 @@
     }, 0);
   }
   function isMayorUnlocked() {
-    return cartDetalSubtotal() >= MAYOR_THRESHOLD;
+    return mayorAll() || cartDetalSubtotal() >= MAYOR_THRESHOLD;
   }
   function cartLineItems() {
     const mayorUnlocked = isMayorUnlocked();
@@ -1162,6 +1167,13 @@
         return { key, id: p.id, name: displayName, image: p.image, qty, price, tone };
       })
       .filter(Boolean);
+  }
+  // Franja "Precio Mayor en toda la tienda" (solo cuando el interruptor del admin está encendido)
+  function paintMayorBanner() {
+    let b = document.getElementById("mayorAllBanner");
+    if (!mayorAll()) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement("div"); b.id = "mayorAllBanner"; b.className = "mayor-all-banner"; const h = document.getElementById("siteHeader"); h.parentNode.insertBefore(b, h.nextSibling); }
+    b.innerHTML = `🔥 <strong>PRECIO MAYOR EN TODA LA TIENDA</strong> · todo a precio Mayor${mayorAllMin() > 0 ? `, compra mínima ${money(mayorAllMin())}` : ", sin mínimo de compra"}`;
   }
   function cartTotal() {
     return cartLineItems().reduce((sum, item) => sum + item.qty * item.price, 0);
@@ -1248,6 +1260,12 @@
     el.cartCount.hidden = count === 0;
   }
   function renderMayorProgress() {
+    if (mayorAll()) {
+      el.mayorProgressFill.style.width = "100%";
+      el.mayorProgress.classList.add("unlocked");
+      el.mayorProgressText.innerHTML = `🔥 <strong>Precio Mayor en toda la tienda</strong>${mayorAllMin() > 0 ? ` · compra mínima ${money(mayorAllMin())}` : " · sin mínimo de compra"}`;
+      return true;
+    }
     const subtotal = cartDetalSubtotal();
     const unlocked = subtotal >= MAYOR_THRESHOLD;
     const pct = Math.min(100, (subtotal / MAYOR_THRESHOLD) * 100);
@@ -1287,6 +1305,9 @@
       el.cartDiscountRow.hidden = true;
     }
     el.cartTotal.textContent = money(subtotal - discount);
+    { const falta = mayorAll() ? mayorAllMin() - subtotal : 0;     // compra mínima (solo con "Precio Mayor para todos")
+      el.checkoutBtn.disabled = falta > 0;
+      el.checkoutBtn.textContent = falta > 0 ? `Agrega ${money(falta)} más para continuar (mínimo ${money(mayorAllMin())})` : "Continuar pedido"; }
     el.cartBsNote.hidden = true; // el monto en Bs solo se muestra dentro de Pago Móvil
     el.cartItems.innerHTML = items.map(item => `
       <div class="cart-line">
@@ -1681,7 +1702,8 @@
     closeCart();
     resetCheckoutForm();
     const unlocked = isMayorUnlocked();
-    el.checkoutTierNote.textContent = unlocked
+    el.checkoutTierNote.textContent = mayorAll() ? "🔥 Precio Mayor en toda la tienda: ya lo tienes aplicado."
+      : unlocked
       ? "🎉 Tu pedido califica para precio Mayor."
       : `Tu pedido va a precio Detal. Agrega ${money(MAYOR_THRESHOLD - cartDetalSubtotal())} más para precio Mayor.`;
     el.checkoutTierNote.classList.toggle("unlocked", unlocked);
@@ -2446,6 +2468,7 @@
     siteSettings = settings;
     BRAND_LOGOS = brandLogos;
     applySettings(settings);
+    paintMayorBanner();
 
     // Si el link trae ?categoria=Ojos (por ejemplo), abre directo ahí
     const urlCat = getCategoryFromURL();

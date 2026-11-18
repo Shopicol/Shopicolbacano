@@ -167,8 +167,8 @@
           <h3 class="card-name">${p.name}</h3>
           <p class="card-ref">${p.ref ? "Ref: " + p.ref : "Sin referencia"}</p>
           <div class="card-prices">
-            <div class="price-chip detal"><span>Detal</span><strong>${money(p.detal)}</strong></div>
-            <div class="price-chip mayor"><span>Mayor</span><strong>${money(p.mayor)}</strong></div>
+            <div class="price-chip detal${mayorAllOn ? " struck" : ""}"><span>${mayorAllOn ? "Antes" : "Detal"}</span><strong>${mayorAllOn ? `<s>${money(p.detal)}</s>` : money(p.detal)}</strong></div>
+            <div class="price-chip mayor${mayorAllOn ? " hot" : ""}"><span>${mayorAllOn ? "Tu precio" : "Mayor"}</span><strong>${money(p.mayor)}</strong></div>
           </div>
         </div>
       </article>
@@ -295,7 +295,9 @@
     el.modalBrand.textContent = p.brand;
     el.modalTitle.textContent = p.name;
     el.modalRef.textContent = p.ref ? `Referencia: ${p.ref}` : "Referencia no especificada";
-    el.modalDetal.textContent = money(p.detal);
+    if (mayorAllOn) { el.modalDetal.innerHTML = `<s>${money(p.detal)}</s>`; el.modalDetal.previousElementSibling.textContent = "Antes"; el.modalMayor.previousElementSibling.textContent = "Tu precio"; }
+    else { el.modalDetal.textContent = money(p.detal); }
+    el.modalDetal.parentElement.classList.toggle("struck", mayorAllOn); el.modalMayor.parentElement.classList.toggle("hot", mayorAllOn);
     el.modalMayor.textContent = money(p.mayor);
     el.modalCategory.textContent = p.category;
 
@@ -577,7 +579,8 @@
       return sum + qty * (p.offer || p.detal || 0);
     }, 0);
   }
-  function isMayorUnlocked() { return cartDetalSubtotal() >= MAYOR_THRESHOLD; }
+  let mayorAllOn = false, mayorAllMinAmt = 0;           // interruptor del admin: "Precio Mayor para todos"
+  function isMayorUnlocked() { return mayorAllOn || cartDetalSubtotal() >= MAYOR_THRESHOLD; }
   function cartLineItems() {
     const mayorUnlocked = isMayorUnlocked();
     return Object.entries(cart).map(([key, qty]) => {
@@ -597,6 +600,11 @@
     el.cartCount.hidden = count === 0;
   }
   function renderMayorProgress() {
+    if (mayorAllOn) {
+      el.mayorProgressFill.style.width = "100%"; el.mayorProgress.classList.add("unlocked");
+      el.mayorProgressText.innerHTML = `🔥 <strong>Precio Mayor en toda la tienda</strong>${mayorAllMinAmt > 0 ? ` · compra mínima ${money(mayorAllMinAmt)}` : " · sin mínimo de compra"}`;
+      return true;
+    }
     const subtotal = cartDetalSubtotal();
     const unlocked = subtotal >= MAYOR_THRESHOLD;
     el.mayorProgressFill.style.width = Math.min(100, (subtotal / MAYOR_THRESHOLD) * 100) + "%";
@@ -619,6 +627,9 @@
     const unlocked = renderMayorProgress();
     el.cartPriceModeLabel.textContent = unlocked ? "Mayor" : "Detal";
     el.cartTotal.textContent = money(cartTotal());
+    { const falta = mayorAllOn ? mayorAllMinAmt - cartTotal() : 0;       // compra mínima (solo con "Precio Mayor para todos")
+      el.checkoutBtn.disabled = falta > 0;
+      el.checkoutBtn.textContent = falta > 0 ? `Agrega ${money(falta)} más para continuar (mínimo ${money(mayorAllMinAmt)})` : "Continuar pedido"; }
     el.cartItems.innerHTML = items.map(item => `
       <div class="cart-line">
         <img src="${item.image}" alt="">
@@ -671,7 +682,8 @@
     closeCart();
     resetCheckoutForm();
     const unlocked = isMayorUnlocked();
-    el.checkoutTierNote.textContent = unlocked
+    el.checkoutTierNote.textContent = mayorAllOn ? "🔥 Precio Mayor en toda la tienda: ya lo tienes aplicado."
+      : unlocked
       ? "🎉 Tu pedido califica para precio Mayor."
       : `Tu pedido va a precio Detal. Agrega ${money(MAYOR_THRESHOLD - cartDetalSubtotal())} más para precio Mayor.`;
     el.checkoutTierNote.classList.toggle("unlocked", unlocked);
@@ -913,6 +925,8 @@
 
     const [product, settings] = await Promise.all([fetchProductById(id), fetchSettings()]);
     applyBrandSettings(settings);
+    mayorAllOn = !!(settings && settings.mayor_all_enabled); mayorAllMinAmt = Number(settings && settings.mayor_all_min) || 0;
+    if (mayorAllOn) { const b = document.createElement("div"); b.className = "mayor-all-banner"; b.innerHTML = `🔥 <strong>PRECIO MAYOR EN TODA LA TIENDA</strong> · todo a precio Mayor${mayorAllMinAmt > 0 ? `, compra mínima ${money(mayorAllMinAmt)}` : ", sin mínimo de compra"}`; const h = document.getElementById("siteHeader"); h.parentNode.insertBefore(b, h.nextSibling); }
     renderCartBadge();
 
     el.productLoading.hidden = true;
