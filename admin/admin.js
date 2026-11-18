@@ -2545,5 +2545,51 @@
   /* ---------------------------------------------------------------
      Init
      --------------------------------------------------------------- */
+  /* ---------------------------------------------------------------
+     PRECIO MAYOR PARA TODOS: interruptor (se enciende y apaga cuando quieras)
+     --------------------------------------------------------------- */
+  (function mayorAllSwitch() {
+    const panel = document.getElementById("tabSettings"); if (!panel) return;
+    const box = document.createElement("section");
+    box.className = "settings-panel"; box.id = "mayorAllCard";
+    box.innerHTML = `<div class="settings-group" style="border:2px solid #E8A33D;border-radius:14px;padding:18px;background:#FFF8EA">
+      <h3 style="margin:0 0 6px">🔥 Precio Mayor para todos</h3>
+      <p style="margin:0 0 12px;font-size:13.5px;line-height:1.5">Al encenderlo, <strong>todos los productos se venden a precio Mayor</strong> sin importar el monto del carrito, y el precio Detal sale <s>tachado</s>. Apágalo cuando quieras para volver a como estaba (Mayor desde $50).</p>
+      <p id="mayorAllStatus" style="font-weight:700;margin:0 0 12px">Cargando…</p>
+      <label style="display:block;max-width:320px;margin-bottom:12px"><span style="display:block;font-size:12.5px;margin-bottom:4px">Compra mínima en $ (0 = sin mínimo)</span><input type="number" min="0" step="0.5" id="mayorAllMin" value="0" style="width:100%;padding:9px 10px;border:1px solid #d6d3c8;border-radius:8px"></label>
+      <button type="button" class="btn-primary" id="mayorAllBtn" disabled>…</button>
+      <p id="mayorAllMsg" style="margin:10px 0 0;font-size:12.5px;color:#92400E" hidden></p>
+    </div>`;
+    panel.insertBefore(box, panel.firstChild);
+    const st = box.querySelector("#mayorAllStatus"), btn = box.querySelector("#mayorAllBtn"), minEl = box.querySelector("#mayorAllMin"), msg = box.querySelector("#mayorAllMsg");
+    let on = false, ready = false;
+    function paint() {
+      st.textContent = on ? "🟢 ENCENDIDO: toda la tienda está a precio Mayor" : "⚪ APAGADO: precio Mayor solo desde $50 en el carrito";
+      st.style.color = on ? "#047857" : "#6B7280";
+      btn.textContent = on ? "Apagar precio Mayor para todos" : "Encender precio Mayor para todos";
+      btn.disabled = !ready;
+    }
+    async function load() {
+      const { data, error } = await supabaseClient.from("site_settings").select("mayor_all_enabled,mayor_all_min").eq("id", 1).maybeSingle();
+      if (error) { st.textContent = "⚠ Falta un paso previo"; msg.textContent = "Antes de usar el interruptor corre en Supabase el archivo migracion_mayor_para_todos.sql (SQL Editor → pegar → Run) y recarga esta página."; msg.hidden = false; return; }
+      on = !!(data && data.mayor_all_enabled); minEl.value = Number(data && data.mayor_all_min) || 0; ready = true; msg.hidden = true; paint();
+    }
+    btn.addEventListener("click", async () => {
+      const next = !on;
+      if (next && !window.confirm("¿Encender precio Mayor para TODA la tienda ahora?" + (Number(minEl.value) > 0 ? `\nCompra mínima: $${Number(minEl.value)}` : "\nSin compra mínima."))) return;
+      btn.disabled = true;
+      const { error } = await supabaseClient.from("site_settings").upsert({ id: 1, mayor_all_enabled: next, mayor_all_min: Math.max(0, Number(minEl.value) || 0) });
+      if (error) { showToast("No se pudo guardar: " + error.message, true); btn.disabled = false; return; }
+      on = next; paint();
+      showToast(on ? "Precio Mayor ENCENDIDO para toda la tienda ✓" : "Precio Mayor apagado: la tienda volvió a como estaba ✓");
+    });
+    minEl.addEventListener("change", async () => {
+      if (!on || !ready) return;
+      const { error } = await supabaseClient.from("site_settings").upsert({ id: 1, mayor_all_min: Math.max(0, Number(minEl.value) || 0) });
+      showToast(error ? "No se pudo guardar el mínimo: " + error.message : "Compra mínima actualizada ✓", !!error);
+    });
+    load();
+  })();
+
   checkSession();
 })();
