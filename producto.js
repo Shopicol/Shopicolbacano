@@ -165,7 +165,7 @@
         <div class="card-body">
           <p class="card-brand">${p.brand}</p>
           <h3 class="card-name">${p.name}</h3>
-          <p class="card-ref">${p.ref ? "Ref: " + p.ref : "Sin referencia"}</p>
+          <p class="card-ref">${p.ref ? "Ref: " + p.ref : "&nbsp;"}</p>
           <div class="card-prices">
             <div class="price-chip detal${mayorAllOn ? " struck" : ""}"><span>${mayorAllOn ? "Antes" : "Detal"}</span><strong>${mayorAllOn ? `<s>${money(p.detal)}</s>` : money(p.detal)}</strong></div>
             <div class="price-chip mayor${mayorAllOn ? " hot" : ""}"><span>${mayorAllOn ? "Tu precio" : "Mayor"}</span><strong>${money(p.mayor)}</strong></div>

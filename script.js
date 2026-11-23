@@ -623,7 +623,7 @@
         <div class="card-body">
           <p class="card-brand">${p.brand}</p>
           <h3 class="card-name">${p.name}</h3>
-          <p class="card-ref">${p.ref ? "Ref: " + p.ref : "Sin referencia"}</p>
+          <p class="card-ref">${p.ref ? "Ref: " + p.ref : "&nbsp;"}</p>
           <div class="card-prices">
             <div class="price-chip detal${mayorAll() ? " struck" : ""}">
               <span>${mayorAll() ? "Antes" : "Detal"}</span>
@@ -714,8 +714,35 @@
     }
 
     el.emptyState.hidden = true;
-    el.productGrid.innerHTML = filtered.map(cardTemplate).join("");
+    // Muestra los productos de a poco (botón "Ver más") para que la página no sea eterna
+    const viewKey = [state.category, state.brand, state.query, state.sort, state.showOnlyFavorites, state.priceMode].join("|");
+    if (viewKey !== gridViewKey) { gridViewKey = viewKey; gridLimit = GRID_STEP; }
+    const shown = filtered.slice(0, gridLimit);
+    el.productGrid.innerHTML = shown.map(cardTemplate).join("");
     attachCardListeners(el.productGrid);
+    paintLoadMore(filtered.length - shown.length);
+  }
+
+  const GRID_STEP = 24;
+  let gridLimit = GRID_STEP;
+  let gridViewKey = "";
+  function paintLoadMore(left) {
+    let box = document.getElementById("loadMoreBox");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "loadMoreBox";
+      box.className = "load-more-box";
+      box.innerHTML = `<button type="button" class="load-more-btn" id="loadMoreBtn"></button>`;
+      el.productGrid.insertAdjacentElement("afterend", box);
+      box.querySelector("button").addEventListener("click", () => {
+        const y = window.scrollY;
+        gridLimit += GRID_STEP;
+        render();
+        window.scrollTo({ top: y });
+      });
+    }
+    box.hidden = left <= 0;
+    if (left > 0) box.querySelector("button").textContent = `Ver más productos (${left} más)`;
   }
 
   /* ---------------------------------------------------------------
@@ -1173,7 +1200,7 @@
     let b = document.getElementById("mayorAllBanner");
     if (!mayorAll()) { if (b) b.remove(); return; }
     if (!b) { b = document.createElement("div"); b.id = "mayorAllBanner"; b.className = "mayor-all-banner"; const h = document.getElementById("siteHeader"); h.parentNode.insertBefore(b, h.nextSibling); }
-    b.innerHTML = `🔥 <strong>PRECIO MAYOR EN TODA LA TIENDA</strong> · todo a precio Mayor${mayorAllMin() > 0 ? `, compra mínima ${money(mayorAllMin())}` : ", sin mínimo de compra"}`;
+    b.innerHTML = `🔥 <strong>PRECIO MAYOR EN TODA LA TIENDA</strong> · todo a precio Mayor${mayorAllMin() > 0 ? `, compra mínima ${money(mayorAllMin())}` : ", sin mínimo de compra"} <span class="mayor-all-urgent">⏰ Solo hasta el domingo</span>`;
   }
   function cartTotal() {
     return cartLineItems().reduce((sum, item) => sum + item.qty * item.price, 0);
@@ -1964,21 +1991,8 @@
     el.bannerCarousel.hidden = false;
     const escA = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
     el.bannerTrack.innerHTML = bannerSlides.map((b, i) => {
-      const hasText = !!((b.title || "").trim() || (b.subtitle || "").trim() || (b.button_text || "").trim());
       const link = (b.button_link || "").trim();
       const hasLink = !!link && link !== "#";
-      // Banner con texto propio: foto de fondo + título/botón (como antes)
-      if (hasText) {
-        const isCat = link.startsWith("categoria:");
-        return `
-      <div class="banner-slide${isCat ? " is-link" : ""}" style="background-image:url('${(b.image || "").replace(/'/g, "\\'")}')"${isCat ? ` data-link="${escA(link)}" role="link" tabindex="0"` : ""}>
-        <div class="banner-slide-content">
-          ${b.title ? `<h3>${b.title}</h3>` : ""}
-          ${b.subtitle ? `<p>${b.subtitle}</p>` : ""}
-          ${b.button_text ? `<a href="${isCat ? "#" : (b.button_link || "#")}">${b.button_text}</a>` : ""}
-        </div>
-      </div>`;
-      }
       // Banner solo imagen (la imagen ya trae su texto): se ve COMPLETO, sin recortes ni texto repetido
       const load = i === 0 ? 'fetchpriority="high"' : 'loading="lazy"';
       return `
@@ -2230,12 +2244,47 @@
     attachCardListeners(el.recentlyViewedScroll);
   }
 
+  // Colecciones tipo "Llegandito" se unen a "Recién llegado" (para no repetir secciones)
+  let ARRIVAL_EXTRA_IDS = [];
+  const isArrivalCollection = col => /llegandit|reci[eé]n llegad/i.test(col.title || "");
+
+  /* Compra por categoría: cuadritos con foto arriba de la portada */
+  function renderCategoryTiles() {
+    const wrap = document.getElementById("catTiles");
+    if (!wrap) return;
+    const cats = orderedCategories(new Set(PRODUCTS.map(p => p.category)));
+    const pick = c => {
+      const list = PRODUCTS.filter(p => p.category === c && p.image && isEffectivelyAvailable(p));
+      return list.find(p => p.featured) || list[0];
+    };
+    const tiles = cats.map(c => ({ c, p: pick(c) })).filter(t => t.p);
+    if (!tiles.length) { wrap.hidden = true; return; }
+    const esc = v => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    wrap.hidden = false;
+    wrap.querySelector(".cat-tiles-row").innerHTML = tiles.map(t => `
+      <button type="button" class="cat-tile" data-tile-cat="${esc(t.c)}">
+        <span class="cat-tile-img"><img src="${esc(t.p.image)}" alt="" loading="lazy"></span>
+        <span class="cat-tile-name">${esc(t.c)}</span>
+      </button>`).join("");
+    wrap.onclick = e => {
+      const b = e.target.closest("[data-tile-cat]");
+      if (!b) return;
+      document.querySelector('.pill[data-cat="' + b.dataset.tileCat + '"]')?.click();
+      el.productGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
   function renderRecentSection() {
-    const recent = PRODUCTS
+    const newest = PRODUCTS
       .filter(p => isEffectivelyAvailable(p) && (p.updated_at || p.created_at))
       .slice()
       .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
-      .slice(0, 4);
+      .slice(0, 8);
+    const extra = ARRIVAL_EXTRA_IDS
+      .map(id => PRODUCTS.find(p => String(p.id) === String(id)))
+      .filter(p => p && isEffectivelyAvailable(p));
+    const seen = new Set();
+    const recent = [...newest, ...extra].filter(p => !seen.has(String(p.id)) && seen.add(String(p.id))).slice(0, 16);
 
     if (!recent.length) {
       el.recentSection.hidden = true;
@@ -2279,6 +2328,12 @@
   }
 
   function renderCollections(collections) {
+    const arrivals = collections.filter(isArrivalCollection);
+    if (arrivals.length) {
+      ARRIVAL_EXTRA_IDS = arrivals.flatMap(c => Array.isArray(c.product_ids) ? c.product_ids : []);
+      renderRecentSection();
+      collections = collections.filter(c => !isArrivalCollection(c));
+    }
     if (!collections.length) {
       el.collectionsContainer.innerHTML = "";
       return;
@@ -2497,6 +2552,7 @@
     buildCategoryPills();
     buildCategoryNav();
     renderCartBadge();
+    renderCategoryTiles();
     renderRecentSection();
     renderRecentlyViewedSection();
     renderFeatured();
