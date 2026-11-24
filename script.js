@@ -52,6 +52,14 @@
   ];
   // Las categorías de siempre van en este orden. Cualquier categoría NUEVA que exista en los productos (ej. «Kits»)
   // aparece sola en los menús, en orden alfabético y justo antes de «Otros». No hace falta tocar esta lista.
+  // Categoría especial "Lo más reciente": productos agregados o modificados en los últimos 30 días
+  const RECENT_CAT = "Lo más reciente";
+  const RECENT_DAYS = 30;
+  const productDate = p => new Date(p.updated_at || p.created_at || 0).getTime();
+  const isRecentProduct = p => productDate(p) >= Date.now() - RECENT_DAYS * 864e5;
+  const hasRecentProducts = () => PRODUCTS.some(p => isRecentProduct(p) && isEffectivelyAvailable(p));
+  const isValidCategory = c => c === RECENT_CAT ? hasRecentProducts() : PRODUCTS.some(p => p.category === c);
+
   function orderedCategories(present) {
     const base = CATEGORY_ORDER.filter(c => c !== "Todas" && present.has(c));
     const extras = [...present].filter(c => c && !CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, "es"));
@@ -318,12 +326,12 @@
 
   function buildCategoryPills() {
     const presentCats = new Set(PRODUCTS.map(p => p.category));
-    const cats = ["Todas", ...orderedCategories(presentCats)];
+    const cats = ["Todas", ...(hasRecentProducts() ? [RECENT_CAT] : []), ...orderedCategories(presentCats)];
 
     el.categoryPills.innerHTML = "";
     cats.forEach(cat => {
       const btn = document.createElement("button");
-      btn.className = "pill" + (cat === state.category ? " active" : "");
+      btn.className = "pill" + (cat === state.category ? " active" : "") + (cat === RECENT_CAT ? " pill-recent" : "");
       btn.type = "button";
       btn.dataset.cat = cat;
       btn.textContent = cat;
@@ -349,6 +357,7 @@
     nav.innerHTML = `<button type="button" data-nav-cat="__home">Inicio</button>` +
       `<button type="button" class="nav-extra" data-nav-act="all">Ver todo</button>` +
       `<button type="button" class="nav-extra" data-nav-act="brands" aria-haspopup="true" aria-expanded="false">Marcas ▾</button>` +
+      (hasRecentProducts() ? `<button type="button" class="nav-recent" data-nav-cat="${RECENT_CAT}">✦ ${RECENT_CAT}</button>` : "") +
       cats.map(c => `<button type="button" data-nav-cat="${c}">${c}</button>`).join("");
     nav.onclick = e => {
       const act = e.target.closest("[data-nav-act]");
@@ -422,6 +431,7 @@
       PRODUCTS.forEach(pr => { counts[pr.category] = (counts[pr.category] || 0) + 1; });
       const cats = orderedCategories(new Set(Object.keys(counts)));
       html = `<button type="button" role="menuitem" class="mp-item ${state.category === "Todas" ? "active" : ""}" data-pop-cat="Todas"><span>Todas las categorías</span><em>${PRODUCTS.length}</em></button>` +
+        (hasRecentProducts() ? `<button type="button" role="menuitem" class="mp-item ${state.category === RECENT_CAT ? "active" : ""}" data-pop-cat="${RECENT_CAT}"><span>✦ ${RECENT_CAT}</span><em>${PRODUCTS.filter(p => isRecentProduct(p) && isEffectivelyAvailable(p)).length}</em></button>` : "") +
         cats.map(c => `<button type="button" role="menuitem" class="mp-item ${state.category === c ? "active" : ""}" data-pop-cat="${escapeHtml(c)}"><span>${escapeHtml(c)}</span><em>${counts[c]}</em></button>`).join("");
     } else {
       const counts = {};
@@ -517,8 +527,7 @@
   // la categoría y la búsqueda que correspondan a esa URL.
   window.addEventListener("popstate", () => {
     const fromUrlCat = getCategoryFromURL();
-    const validCats = new Set(PRODUCTS.map(p => p.category));
-    state.category = (fromUrlCat && validCats.has(fromUrlCat)) ? fromUrlCat : "Todas";
+    state.category = (fromUrlCat && isValidCategory(fromUrlCat)) ? fromUrlCat : "Todas";
     document.querySelectorAll(".pill").forEach(p => {
       p.classList.toggle("active", p.dataset.cat === state.category);
     });
@@ -542,7 +551,8 @@
       // el equipo lo dejó marcado como visible — si no, se oculta del
       // todo, como antes.
       if (!isEffectivelyAvailable(p) && p.show_when_out_of_stock === false) return false;
-      if (state.category !== "Todas" && p.category !== state.category) return false;
+      if (state.category === RECENT_CAT) { if (!isRecentProduct(p) || !isEffectivelyAvailable(p)) return false; }
+      else if (state.category !== "Todas" && p.category !== state.category) return false;
       if (state.brand && p.brand !== state.brand) return false;
       if (state.showOnlyFavorites && !isFavorite(p.id)) return false;
 
@@ -565,6 +575,8 @@
         break;
       default:
         // "relevance": mantiene el orden original del catálogo
+        // (en "Lo más reciente", primero lo último que se agregó o cambió)
+        if (state.category === RECENT_CAT) list = list.slice().sort((a, b) => productDate(b) - productDate(a));
     }
 
     // Los agotados se muestran (con su sello "Agotado" y el botón
@@ -2258,11 +2270,13 @@
       return list.find(p => p.featured) || list[0];
     };
     const tiles = cats.map(c => ({ c, p: pick(c) })).filter(t => t.p);
+    const newest = PRODUCTS.filter(p => p.image && isRecentProduct(p) && isEffectivelyAvailable(p)).sort((a, b) => productDate(b) - productDate(a))[0];
+    if (newest) tiles.unshift({ c: RECENT_CAT, p: newest, recent: true });
     if (!tiles.length) { wrap.hidden = true; return; }
     const esc = v => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
     wrap.hidden = false;
     wrap.querySelector(".cat-tiles-row").innerHTML = tiles.map(t => `
-      <button type="button" class="cat-tile" data-tile-cat="${esc(t.c)}">
+      <button type="button" class="cat-tile${t.recent ? " cat-tile-recent" : ""}" data-tile-cat="${esc(t.c)}">
         <span class="cat-tile-img"><img src="${esc(t.p.image)}" alt="" loading="lazy"></span>
         <span class="cat-tile-name">${esc(t.c)}</span>
       </button>`).join("");
@@ -2528,8 +2542,7 @@
     // Si el link trae ?categoria=Ojos (por ejemplo), abre directo ahí
     const urlCat = getCategoryFromURL();
     if (urlCat) {
-      const validCats = new Set(PRODUCTS.map(p => p.category));
-      if (validCats.has(urlCat)) state.category = urlCat;
+      if (isValidCategory(urlCat)) state.category = urlCat;
     }
 
     // Si el link trae ?buscar=ojos+grises (ej. viniendo del buscador de

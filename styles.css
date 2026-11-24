@@ -1487,3 +1487,10 @@ body.is-searching #catTiles{ display:none !important; }
 .load-more-box{ text-align:center; margin:26px 0 10px; }
 .load-more-btn{ background:var(--ink); color:#fff; border:0; border-radius:999px; padding:14px 30px; font:inherit; font-weight:700; font-size:15px; cursor:pointer; box-shadow:var(--shadow-sm); }
 .load-more-btn:hover{ opacity:.9; }
+
+/* "Lo más reciente" resaltado */
+.category-nav .nav-recent{ color:#c2255c; font-weight:800; }
+.category-nav .nav-recent.active{ color:#c2255c; }
+.pill.pill-recent:not(.active){ border-color:#e64980; color:#c2255c; font-weight:700; }
+.cat-tile-recent .cat-tile-img{ outline:3px solid #e64980; }
+.cat-tile-recent .cat-tile-name{ color:#c2255c; }
