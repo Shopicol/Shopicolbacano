@@ -344,7 +344,7 @@ button, select, input{ font-family:inherit; }
 .suggestion-viewall:hover{ background:var(--pink-pale); border-radius:0 0 10px 10px; }
 
 @media (max-width:640px){
-  .search-suggestions{ position:fixed; top:64px; left:10px; right:10px; max-height:60vh; }
+  .search-suggestions{ position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:60vh; }
 }
 
 .mode-toggle{

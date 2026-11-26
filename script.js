@@ -245,6 +245,14 @@
       .replace(/[\u0300-\u036f]/g, ""); // quita tildes para búsqueda flexible
   }
 
+  // Compara ignorando espacios, guiones y signos: "ani k", "anik" y "Ani-K" son lo mismo
+  function squash(str) { return normalize(str).replace(/[^a-z0-9]/g, ""); }
+  function textMatches(haystackRaw, queryNorm) {
+    if (normalize(haystackRaw).includes(queryNorm)) return true;
+    const sq = squash(queryNorm);
+    return sq.length > 0 && squash(haystackRaw).includes(sq);
+  }
+
   /* ---------------------------------------------------------------
      2.5 Favoritos (lista de deseos) — se guardan en este navegador
      --------------------------------------------------------------- */
@@ -557,8 +565,7 @@
       if (state.showOnlyFavorites && !isFavorite(p.id)) return false;
 
       if (q) {
-        const haystack = normalize(`${p.name} ${p.brand} ${p.category} ${p.ref}`);
-        if (!haystack.includes(q)) return false;
+        if (!textMatches(`${p.name} ${p.brand} ${p.category} ${p.ref}`, q)) return false;
       }
       return true;
     });
@@ -722,6 +729,7 @@
     if (!filtered.length) {
       el.productGrid.innerHTML = "";
       el.emptyState.hidden = false;
+      const lm = document.getElementById("loadMoreBox"); if (lm) lm.hidden = true;   // sin resultados: no dejar el botón "Ver más" viejo
       return;
     }
 
@@ -967,7 +975,7 @@
 
     const matches = PRODUCTS
       .filter(p => isEffectivelyAvailable(p))
-      .filter(p => normalize(`${p.name} ${p.brand} ${p.ref}`).includes(q))
+      .filter(p => textMatches(`${p.name} ${p.brand} ${p.ref}`, q))
       .slice(0, 6);
 
     suggestionItems = matches;
